@@ -7,12 +7,10 @@ export class UsuariosController {
   constructor(private readonly usuariosService: UsuariosService) {}
 
   // Endpoint: POST /usuarios
-  @Post()
-  crearUsuario(@Body() body: Partial<Usuario>) {
-    // Para empezar y poder hacer nuestras primeras pruebas, forzaremos 
-    // que el usuario creado pertenezca a la Finca con ID 1.
-    // Más adelante, en arquitectura SaaS, esto lo extraeremos del Token del Propietario.
-    const fincaId = 1; 
+ @Post()
+  crearUsuario(@Body() body: any) {
+    // Si Postman envía un fincaId, lo usa. Si no, lo manda a la finca 1 por defecto.
+    const fincaId = body.fincaId || 1; 
     return this.usuariosService.crearUsuario(body, fincaId);
   }
 }
