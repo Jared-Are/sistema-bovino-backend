@@ -5,114 +5,88 @@ import { UsuarioActual } from '../../common/decorators/usuario.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { RolUsuario } from '../../common/enums';
+// DTOs
+import { CrearRazaDto, ActualizarRazaDto } from './dto/raza.dto';
+import { CrearLoteDto, ActualizarLoteDto } from './dto/lote.dto';
+import { CrearPotreroDto, ActualizarPotreroDto } from './dto/potrero.dto';
 
 @Controller('parametros')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class ParametrosController {
   constructor(private readonly parametrosService: ParametrosService) {}
 
-  // --- RAZAS ---
+  // 🐮 RUTAS PARA RAZAS
   @Post('razas')
   @Roles(RolUsuario.PROPIETARIO)
-  async crearRaza(
-    @Body() body: { nombre: string; descripcion: string }, 
-    @UsuarioActual() usuario: any
-  ) {
-    return this.parametrosService.crearRaza(body.nombre, body.descripcion, usuario.fincaId);
+  crearRaza(@Body() body: CrearRazaDto, @UsuarioActual() usuario: any) {
+    return this.parametrosService.crearRaza(body, usuario.fincaId);
   }
 
   @Get('razas')
   @Roles(RolUsuario.PROPIETARIO, RolUsuario.VETERINARIO, RolUsuario.OPERARIO)
-  async obtenerRazas(@UsuarioActual() usuario: any) {
+  obtenerRazas(@UsuarioActual() usuario: any) {
     return this.parametrosService.obtenerRazas(usuario.fincaId);
   }
 
   @Patch('razas/:id')
   @Roles(RolUsuario.PROPIETARIO)
-  async actualizarRaza(
-    @Param('id') id: string,
-    @Body() body: { nombre?: string; descripcion?: string },
-    @UsuarioActual() usuario: any
-  ) {
+  actualizarRaza(@Param('id') id: string, @Body() body: ActualizarRazaDto, @UsuarioActual() usuario: any) {
     return this.parametrosService.actualizarRaza(+id, body, usuario.fincaId);
   }
 
   @Delete('razas/:id')
   @Roles(RolUsuario.PROPIETARIO)
-  async eliminarRaza(
-    @Param('id') id: string,
-    @UsuarioActual() usuario: any
-  ) {
+  eliminarRaza(@Param('id') id: string, @UsuarioActual() usuario: any) {
     return this.parametrosService.eliminarRaza(+id, usuario.fincaId);
   }
 
-  // --- LOTES ---
+  // 🏡 RUTAS PARA LOTES
   @Post('lotes')
   @Roles(RolUsuario.PROPIETARIO)
-  async crearLote(
-    @Body() body: { nombre: string }, 
-    @UsuarioActual() usuario: any
-  ) {
-    return this.parametrosService.crearLote(body.nombre, usuario.fincaId);
+  crearLote(@Body() body: CrearLoteDto, @UsuarioActual() usuario: any) {
+    return this.parametrosService.crearLote(body, usuario.fincaId);
   }
   
   @Get('lotes')
   @Roles(RolUsuario.PROPIETARIO, RolUsuario.VETERINARIO, RolUsuario.OPERARIO)
-  async obtenerLotes(@UsuarioActual() usuario: any) {
+  obtenerLotes(@UsuarioActual() usuario: any) {
     return this.parametrosService.obtenerLotes(usuario.fincaId);
   }
 
   @Patch('lotes/:id')
   @Roles(RolUsuario.PROPIETARIO)
-  async actualizarLote(
-    @Param('id') id: string,
-    @Body() body: { nombre: string },
-    @UsuarioActual() usuario: any
-  ) {
-    return this.parametrosService.actualizarLote(+id, body.nombre, usuario.fincaId);
+  actualizarLote(@Param('id') id: string, @Body() body: ActualizarLoteDto, @UsuarioActual() usuario: any) {
+    return this.parametrosService.actualizarLote(+id, body, usuario.fincaId);
   }
 
   @Delete('lotes/:id')
   @Roles(RolUsuario.PROPIETARIO)
-  async eliminarLote(
-    @Param('id') id: string,
-    @UsuarioActual() usuario: any
-  ) {
+  eliminarLote(@Param('id') id: string, @UsuarioActual() usuario: any) {
     return this.parametrosService.eliminarLote(+id, usuario.fincaId);
   }
 
-  // --- POTREROS ---
+  // 🌱 RUTAS PARA POTREROS
   @Post('potreros')
   @Roles(RolUsuario.PROPIETARIO)
-  async crearPotrero(
-    @Body() body: { nombre: string }, 
-    @UsuarioActual() usuario: any
-  ) {
-    return this.parametrosService.crearPotrero(body.nombre, usuario.fincaId);
+  crearPotrero(@Body() body: CrearPotreroDto, @UsuarioActual() usuario: any) {
+    return this.parametrosService.crearPotrero(body, usuario.fincaId);
   }
 
   @Get('potreros')
   @Roles(RolUsuario.PROPIETARIO, RolUsuario.VETERINARIO, RolUsuario.OPERARIO)
-  async obtenerPotreros(@UsuarioActual() usuario: any) {
+  obtenerPotreros(@UsuarioActual() usuario: any) {
     return this.parametrosService.obtenerPotreros(usuario.fincaId);
   }
 
   @Patch('potreros/:id')
   @Roles(RolUsuario.PROPIETARIO)
-  async actualizarPotrero(
-    @Param('id') id: string,
-    @Body() body: { nombre: string },
-    @UsuarioActual() usuario: any
-  ) {
-    return this.parametrosService.actualizarPotrero(+id, body.nombre, usuario.fincaId);
+  actualizarPotrero(@Param('id') id: string, @Body() body: ActualizarPotreroDto, @UsuarioActual() usuario: any) {
+    return this.parametrosService.actualizarPotrero(+id, body, usuario.fincaId);
   }
 
   @Delete('potreros/:id')
   @Roles(RolUsuario.PROPIETARIO)
-  async eliminarPotrero(
-    @Param('id') id: string,
-    @UsuarioActual() usuario: any
-  ) {
+  eliminarPotrero(@Param('id') id: string, @UsuarioActual() usuario: any) {
     return this.parametrosService.eliminarPotrero(+id, usuario.fincaId);
   }
 }

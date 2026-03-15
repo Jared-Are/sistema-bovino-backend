@@ -5,6 +5,7 @@ import { UsuarioActual } from '../../common/decorators/usuario.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { RolUsuario } from '../../common/enums';
+import { RegistrarLecheDto, ActualizarLecheDto, RegistrarCarneDto, ActualizarCarneDto } from './dto/produccion.dto';
 
 @Controller('produccion')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -14,7 +15,7 @@ export class ProduccionController {
   // --- RUTAS PARA LECHE ---
   @Post('leche')
   @Roles(RolUsuario.PROPIETARIO, RolUsuario.OPERARIO)
-  registrarLeche(@Body() body: any, @UsuarioActual() usuario: any) {
+  registrarLeche(@Body() body: RegistrarLecheDto, @UsuarioActual() usuario: any) {
     return this.produccionService.registrarLeche(body, usuario.fincaId);
   }
 
@@ -26,7 +27,7 @@ export class ProduccionController {
 
   @Patch('leche/:id')
   @Roles(RolUsuario.PROPIETARIO)
-  actualizarLeche(@Param('id') id: string, @Body() body: any, @UsuarioActual() usuario: any) {
+  actualizarLeche(@Param('id') id: string, @Body() body: ActualizarLecheDto, @UsuarioActual() usuario: any) {
     return this.produccionService.actualizarLeche(+id, body, usuario.fincaId);
   }
 
@@ -39,7 +40,7 @@ export class ProduccionController {
   // --- RUTAS PARA CARNE ---
   @Post('carne')
   @Roles(RolUsuario.PROPIETARIO, RolUsuario.OPERARIO)
-  registrarCarne(@Body() body: any, @UsuarioActual() usuario: any) {
+  registrarCarne(@Body() body: RegistrarCarneDto, @UsuarioActual() usuario: any) {
     return this.produccionService.registrarCarne(body, usuario.fincaId);
   }
 
@@ -51,7 +52,7 @@ export class ProduccionController {
 
   @Patch('carne/:id')
   @Roles(RolUsuario.PROPIETARIO)
-  actualizarCarne(@Param('id') id: string, @Body() body: any, @UsuarioActual() usuario: any) {
+  actualizarCarne(@Param('id') id: string, @Body() body: ActualizarCarneDto, @UsuarioActual() usuario: any) {
     return this.produccionService.actualizarCarne(+id, body, usuario.fincaId);
   }
 

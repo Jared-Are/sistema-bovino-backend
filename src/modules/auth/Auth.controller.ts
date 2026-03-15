@@ -2,6 +2,8 @@ import { Controller, Post, Body, UnauthorizedException, HttpCode, HttpStatus, Us
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { UsuarioActual } from '../../common/decorators/usuario.decorator';
+import { LoginDto } from './dto/login.dto';
+import { CambiarContrasenaDto } from './dto/cambiar-contrasena.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -9,11 +11,7 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  async login(@Body() body: { identificador: string; contrasena: string }) {
-    if (!body.identificador || !body.contrasena) {
-      throw new UnauthorizedException('Faltan credenciales');
-    }
-
+  async login(@Body() body: LoginDto) {
     const user = await this.authService.validarUsuario(body.identificador, body.contrasena);
     
     if (!user) {
@@ -27,13 +25,9 @@ export class AuthController {
   @Post('cambiar-contrasena')
   @UseGuards(JwtAuthGuard) // NO requiere RolesGuard, pues todos deben poder cambiarla
   async cambiarContrasena(
-    @Body() body: { nuevaContrasena: string },
+    @Body() body: CambiarContrasenaDto,
     @UsuarioActual() tokenInfo: any
   ) {
-    if (!body.nuevaContrasena || body.nuevaContrasena.length < 6) {
-      throw new UnauthorizedException('La nueva contraseña debe tener al menos 6 caracteres');
-    }
-
     await this.authService.cambiarContrasena(tokenInfo.userId, body.nuevaContrasena);
     
     return {

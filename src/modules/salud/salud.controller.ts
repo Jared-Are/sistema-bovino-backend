@@ -5,6 +5,8 @@ import { UsuarioActual } from '../../common/decorators/usuario.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { RolUsuario } from '../../common/enums';
+import { CrearTratamientoDto, ActualizarTratamientoDto } from './dto/tratamiento.dto';
+import { CrearVacunaDto, ActualizarVacunaDto } from './dto/vacuna.dto';
 
 @Controller('salud')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -14,7 +16,7 @@ export class SaludController {
   // --- TRATAMIENTOS ---
   @Post('tratamientos')
   @Roles(RolUsuario.PROPIETARIO, RolUsuario.VETERINARIO)
-  crearTratamiento(@Body() body: any, @UsuarioActual() usuario: any) {
+  crearTratamiento(@Body() body: CrearTratamientoDto, @UsuarioActual() usuario: any) {
     return this.saludService.crearTratamiento(body, usuario.fincaId);
   }
 
@@ -26,7 +28,7 @@ export class SaludController {
 
   @Patch('tratamientos/:id')
   @Roles(RolUsuario.PROPIETARIO, RolUsuario.VETERINARIO)
-  actualizarTratamiento(@Param('id') id: string, @Body() body: any, @UsuarioActual() usuario: any) {
+  actualizarTratamiento(@Param('id') id: string, @Body() body: ActualizarTratamientoDto, @UsuarioActual() usuario: any) {
     return this.saludService.actualizarTratamiento(+id, body, usuario.fincaId);
   }
 
@@ -39,7 +41,7 @@ export class SaludController {
   // --- VACUNAS ---
   @Post('vacunas')
   @Roles(RolUsuario.PROPIETARIO, RolUsuario.VETERINARIO)
-  registrarVacuna(@Body() body: any, @UsuarioActual() usuario: any) {
+  registrarVacuna(@Body() body: CrearVacunaDto, @UsuarioActual() usuario: any) {
     return this.saludService.registrarVacuna(body, usuario.fincaId);
   }
 
@@ -51,7 +53,7 @@ export class SaludController {
 
   @Patch('vacunas/:id')
   @Roles(RolUsuario.PROPIETARIO, RolUsuario.VETERINARIO)
-  actualizarVacuna(@Param('id') id: string, @Body() body: any, @UsuarioActual() usuario: any) {
+  actualizarVacuna(@Param('id') id: string, @Body() body: ActualizarVacunaDto, @UsuarioActual() usuario: any) {
     return this.saludService.actualizarVacuna(+id, body, usuario.fincaId);
   }
 

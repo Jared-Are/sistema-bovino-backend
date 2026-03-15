@@ -5,6 +5,7 @@ import { UsuarioActual } from '../../common/decorators/usuario.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { RolUsuario } from '../../common/enums';
+import { CrearAnimalDto, ActualizarAnimalDto } from './dto/animal.dto';
 
 @Controller('animales')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -13,7 +14,7 @@ export class AnimalesController {
 
   @Post()
   @Roles(RolUsuario.PROPIETARIO, RolUsuario.OPERARIO)
-  create(@Body() body: any, @UsuarioActual() usuario: any) {
+  create(@Body() body: CrearAnimalDto, @UsuarioActual() usuario: any) {
     // Le pasamos el cuerpo de la petición Y el ID de su finca
     return this.animalesService.create(body, usuario.fincaId);
   }
@@ -33,7 +34,7 @@ export class AnimalesController {
 
   @Patch(':id')
   @Roles(RolUsuario.PROPIETARIO, RolUsuario.VETERINARIO)
-  update(@Param('id') id: string, @Body() body: any, @UsuarioActual() usuario: any) {
+  update(@Param('id') id: string, @Body() body: ActualizarAnimalDto, @UsuarioActual() usuario: any) {
     return this.animalesService.update(+id, body, usuario.fincaId);
   }
 

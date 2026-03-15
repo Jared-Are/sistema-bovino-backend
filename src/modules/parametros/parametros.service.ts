@@ -13,8 +13,8 @@ export class ParametrosService {
     @InjectRepository(Potrero) private potreroRepo: Repository<Potrero>,
   ) { }
 
-  async crearRaza(nombre: string, descripcion: string, fincaId: number) {
-    return this.razaRepo.save({ nombre, descripcion, finca: { finca_id: fincaId } as any });
+  async crearRaza(datos: any, fincaId: number) {
+    return this.razaRepo.save({ ...datos, finca: { finca_id: fincaId } as any });
   }
 
   async obtenerRazas(fincaId: number) {
@@ -42,9 +42,9 @@ export class ParametrosService {
   }
 
   // --- LOTES ---
-  async crearLote(nombre: string, fincaId: number) {
+  async crearLote(datos: any, fincaId: number) {
     return this.loteRepo.save({ 
-        nombre, 
+        ...datos, 
         finca: { finca_id: fincaId } as any 
     });
   }
@@ -55,14 +55,14 @@ export class ParametrosService {
     });
   }
 
-  async actualizarLote(id: number, nombre: string, fincaId: number) {
+  async actualizarLote(id: number, datos: any, fincaId: number) {
     // Primero verificamos que pertenezca a la finca
     const lote = await this.loteRepo.findOne({
         where: { lote_id: id, finca: { finca_id: fincaId } }
     });
     if (!lote) throw new Error('Lote no encontrado o no pertenece a tu finca');
     
-    return this.loteRepo.update(id, { nombre });
+    return this.loteRepo.update(id, datos);
   }
 
   async eliminarLote(id: number, fincaId: number) {
@@ -76,9 +76,9 @@ export class ParametrosService {
   }
 
   // --- POTREROS ---
-  async crearPotrero(nombre: string, fincaId: number) {
+  async crearPotrero(datos: any, fincaId: number) {
     return this.potreroRepo.save({ 
-        nombre, 
+        ...datos, 
         finca: { finca_id: fincaId } as any 
     });
   }
@@ -89,13 +89,13 @@ export class ParametrosService {
     });
   }
 
-  async actualizarPotrero(id: number, nombre: string, fincaId: number) {
+  async actualizarPotrero(id: number, datos: any, fincaId: number) {
     const potrero = await this.potreroRepo.findOne({
         where: { potrero_id: id, finca: { finca_id: fincaId } }
     });
     if (!potrero) throw new Error('Potrero no encontrado o no pertenece a tu finca');
 
-    return this.potreroRepo.update(id, { nombre });
+    return this.potreroRepo.update(id, datos);
   }
 
   async eliminarPotrero(id: number, fincaId: number) {

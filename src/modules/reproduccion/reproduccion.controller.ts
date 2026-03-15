@@ -5,6 +5,7 @@ import { UsuarioActual } from '../../common/decorators/usuario.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { RolUsuario } from '../../common/enums';
+import { RegistrarMontaDto, RegistrarDiagnosticoDto, RegistrarPartoDto } from './dto/reproduccion.dto';
 
 @Controller('reproduccion')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -13,7 +14,7 @@ export class ReproduccionController {
 
   @Post('montas')
   @Roles(RolUsuario.PROPIETARIO, RolUsuario.VETERINARIO, RolUsuario.OPERARIO)
-  registrarMonta(@Body() body: any, @UsuarioActual() usuario: any) {
+  registrarMonta(@Body() body: RegistrarMontaDto, @UsuarioActual() usuario: any) {
     return this.reproduccionService.registrarMonta(body, usuario.fincaId);
   }
 
@@ -25,7 +26,7 @@ export class ReproduccionController {
 
   @Post('diagnosticos')
   @Roles(RolUsuario.PROPIETARIO, RolUsuario.VETERINARIO, RolUsuario.OPERARIO)
-  registrarDiagnostico(@Body() body: any, @UsuarioActual() usuario: any) {
+  registrarDiagnostico(@Body() body: RegistrarDiagnosticoDto, @UsuarioActual() usuario: any) {
     // Pasamos el fincaId para aislamiento y el userId para la notificación personalizada
     return this.reproduccionService.registrarDiagnostico(body, usuario.fincaId, usuario.userId);
   }
@@ -38,7 +39,7 @@ export class ReproduccionController {
 
   @Post('partos')
   @Roles(RolUsuario.PROPIETARIO, RolUsuario.VETERINARIO, RolUsuario.OPERARIO)
-  registrarParto(@Body() body: any, @UsuarioActual() usuario: any) {
+  registrarParto(@Body() body: RegistrarPartoDto, @UsuarioActual() usuario: any) {
     return this.reproduccionService.registrarParto(body, usuario.fincaId, usuario.userId);
   }
 
