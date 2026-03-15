@@ -1,5 +1,7 @@
-import { Controller, Post, Body, UnauthorizedException, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Body, UnauthorizedException, HttpCode, HttpStatus, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
+import { JwtAuthGuard } from './jwt-auth.guard';
+import { UsuarioActual } from '../../common/decorators/usuario.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -19,5 +21,23 @@ export class AuthController {
     }
 
     return this.authService.generarToken(user);
+  }
+
+  // NUEVO: Ruta protegida para forzar el cambio de contraseña
+  @Post('cambiar-contrasena')
+  @UseGuards(JwtAuthGuard) // NO requiere RolesGuard, pues todos deben poder cambiarla
+  async cambiarContrasena(
+    @Body() body: { nuevaContrasena: string },
+    @UsuarioActual() tokenInfo: any
+  ) {
+    if (!body.nuevaContrasena || body.nuevaContrasena.length < 6) {
+      throw new UnauthorizedException('La nueva contraseña debe tener al menos 6 caracteres');
+    }
+
+    await this.authService.cambiarContrasena(tokenInfo.userId, body.nuevaContrasena);
+    
+    return {
+      mensaje: 'Contraseña actualizada exitosamente. Por favor vuelve a iniciar sesión.'
+    };
   }
 }

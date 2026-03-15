@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn, DeleteDateColumn } from 'typeorm';
 import { Animal } from '../../animales/entities/animal.entity';
 
 @Entity('produccion_lechera')
@@ -25,4 +25,7 @@ export class ProduccionLechera {
 
   @CreateDateColumn()
   fecha_creacion: Date;
+
+  @DeleteDateColumn({ type: 'timestamptz', nullable: true })
+  fecha_eliminacion: Date;
 }

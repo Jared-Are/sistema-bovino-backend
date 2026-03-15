@@ -1,0 +1,38 @@
+La arquitectura implementada en el backend está diseñada bajo tres pilares fundamentales: Seguridad por Roles (RBAC), Aislamiento Estricto de Datos (Multi-tenancy) y Flujo Controlado de Usuarios.
+
+A continuación se detalla cómo interactúan estos componentes y su compatibilidad con lógicas externas:
+
+1. Control de Acceso Basado en Roles (RBAC) mediante RolesGuard
+El sistema restringe las acciones de cada usuario dependiendo de su rol asignado (PROPIETARIO, VETERINARIO, OPERARIO).
+
+Emisión de Identidad (JwtAuthGuard): Al iniciar sesión, el sistema genera un token JWT inmutable que contiene el ID del usuario, su rol y a qué finca pertenece.
+Declaración de Permisos (@Roles): En los controladores, cada endpoint (ruta) delega quién puede ejecutarlo usando el decorador personalizado. Por ejemplo: @Roles(RolUsuario.PROPIETARIO).
+Intercepción Centralizada (RolesGuard): Es un middleware de seguridad (Guard) que actua en milisegundos antes de que la petición llegue al núcleo de código. El RolesGuard extrae el rol del Token JWT del usuario y verifica si está dentro de los roles autorizados por el decorador. Si un OPERARIO intenta acceder a una ruta de PROPIETARIO, la petición es bloqueada instantáneamente con un error 403 Forbidden, protegiendo la lógica del negocio.
+
+2. Aislamiento Multi-Finca Estricto (Data Isolation)
+Se garantiza que la información de una finca sea completamente invisible y accesible únicamente para el personal de la misma.
+
+El fincaId como Eje Central: El identificador de la finca (fincaId) nunca se recibe ni se confía en lo que envía el Frontend en el cuerpo de la petición (JSON). Por el contrario, se extrae criptográficamente del Token JWT del usuario autenticado (mediante el decorador @UsuarioActual()).
+Filtro Obligatorio en Base de Datos: Todas las consultas a la base de datos (Crear, Leer, Actualizar o Eliminar) cruzan obligatoriamente la información con ese fincaId. Por ejemplo, para editar un registro, además del ID del registro internamente se busca where: { id: registroId, fincaId: usuario.fincaId }. Si un usuario intenta consultar la información (o manipular el ID en la URL) de un animal perteneciente a otra finca, el sistema retornará un 404 Not Found, ya que para el sistema, información ajena a su finca "no existe".
+
+3. Flujo de Onboarding: Cambio de Contraseña Obligatorio
+Mecanismo de ingreso diseñado sin fricciones para trabajadores de campo, pero garantizando la privacidad operativa:
+
+Creación Silenciosa: El Propietario registra al Operario sólo con su número de teléfono. El sistema asigna automáticamente la contraseña genérica Finca1234 y enciende un rastreador en base de datos: debe_cambiar_contrasena = true.
+Detección en el Primer Ingreso: Cuando el operario inicia sesión con la clave genérica, el Token generado incluye una advertencia explícita (debeCambiarContrasena: true).
+Contención Visual (Frontend): El cliente detecta esta bandera e impide al usuario interactuar con el sistema, mostrándole un modal obligatorio para registrar su clave privada.
+Confirmación y Desbloqueo (Backend): El sistema envía esta nueva clave a un endpoint exclusivo (POST /auth/cambiar-contrasena). El backend la recibe, la encripta asimétricamente usando Bcrypt, desactiva la bandera (debe_cambiar_contrasena = false) y libera el acceso total del usuario al sistema.
+
+4. Completitud y Estandarización de los Módulos (CRUD y Soft-Delete)
+Todos los submódulos del sistema comparten ahora el mismo estándar de calidad y prevención de pérdida de datos:
+
+Módulos Sincronizados: Razas, Salud (Tratamientos/Vacunas), Producción (Carne/Leche), Reproducción y Usuarios.
+Operaciones Completas: Todos los mencionados cuentan ahora con las operaciones completas de Crear, Leer, Actualizar y Eliminar, todas rigurosamente blindadas con el Aislamiento Multi-Finca y el Control por Roles.
+Borrado Lógico (Soft Delete): Las eliminaciones de entidades críticas (Lotes, Potreros, Razas, Registros de Salud y Producción) implementan @DeleteDateColumn. Al realizar un DELETE, el registro no desaparece de la base de datos, sino que se marca con una fecha de inhabilitación. Esto protege métricas históricas de la finca y evita dejar "huérfanos" a animales asociados a esos registros.
+
+5. Compatibilidad Lógica con recorrido-backend
+El esquema aquí implementado resulta armónico y compatible con las filosofías manejadas en el otro repositorio, manteniendo las líneas trazadas de su arquitectura original:
+
+Protección por Guardias: Al igual que Recorrido restringe con base a Tutores o Choferes, el Sistema Bovino lo hace de manera robusta usando jerarquías gerenciales (Propietario vs Operario).
+Gestión Temprana de Tokens: Ambos proyectos entienden las identidades mediante Tokens (AuthGuard); sólo cambian su origen. Mientras Recorrido delega la emisión a un tercero (Supabase), nosotros autogestionamos nuestros Tokens (Node.js/JwtModule), favoreciendo la inserción de variables exclusivas del negocio agrario como el fincaId.
+Concepción Segura de Cuentas: El espíritu de no delegar el control a contraseñas expuestas y exigir validación inicial por el usuario (allá mediante WhatsApp, aquí forzándolo in-app) mantiene incólume el estándar de seguridad perseguido por el equipo.

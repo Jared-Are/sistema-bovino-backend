@@ -1,5 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
-import { Animal } from '../../animales/entities/animal.entity'; // Verifica la ruta si es necesario
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn, DeleteDateColumn } from 'typeorm';
+import { Animal } from '../../animales/entities/animal.entity';
 
 @Entity('produccion_carne')
 export class ProduccionCarne {
@@ -20,4 +20,7 @@ export class ProduccionCarne {
 
   @CreateDateColumn()
   fecha_creacion: Date;
+
+  @DeleteDateColumn({ type: 'timestamptz', nullable: true })
+  fecha_eliminacion: Date;
 }

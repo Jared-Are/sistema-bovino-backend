@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ProduccionCarne } from './entities/produccion-carne.entity';
@@ -31,6 +31,24 @@ export class ProduccionService {
     });
   }
 
+  async actualizarLeche(id: number, datos: any, fincaId: number) {
+    const registro = await this.produccionLecheraRepo.findOne({
+      where: { id, fincaId }
+    });
+    if (!registro) throw new NotFoundException('Registro de leche no encontrado o no pertenece a tu finca');
+
+    return this.produccionLecheraRepo.update(id, datos);
+  }
+
+  async eliminarLeche(id: number, fincaId: number) {
+    const registro = await this.produccionLecheraRepo.findOne({
+      where: { id, fincaId }
+    });
+    if (!registro) throw new NotFoundException('Registro de leche no encontrado o no pertenece a tu finca');
+
+    return this.produccionLecheraRepo.softDelete(id);
+  }
+
   // =====================================
   // PRODUCCIÓN DE CARNE
   // =====================================
@@ -49,5 +67,23 @@ export class ProduccionService {
       relations: ['animal'],
       order: { fecha_creacion: 'DESC' }
     });
+  }
+
+  async actualizarCarne(id: number, datos: any, fincaId: number) {
+    const registro = await this.produccionCarneRepo.findOne({
+      where: { id, fincaId }
+    });
+    if (!registro) throw new NotFoundException('Registro de carne no encontrado o no pertenece a tu finca');
+
+    return this.produccionCarneRepo.update(id, datos);
+  }
+
+  async eliminarCarne(id: number, fincaId: number) {
+    const registro = await this.produccionCarneRepo.findOne({
+      where: { id, fincaId }
+    });
+    if (!registro) throw new NotFoundException('Registro de carne no encontrado o no pertenece a tu finca');
+
+    return this.produccionCarneRepo.softDelete(id);
   }
 }

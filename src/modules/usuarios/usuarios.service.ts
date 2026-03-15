@@ -44,4 +44,31 @@ export class UsuariosService {
     // 4. Guardamos en base de datos
     return this.usuarioRepository.save(nuevoUsuario);
   }
+
+  async obtenerUsuariosDeFinca(fincaId: number) {
+    return this.usuarioRepository.find({
+      where: { finca: { finca_id: fincaId } },
+      select: ['usuario_id', 'telefono', 'rol', 'estado', 'fecha_creacion'] // Ocultamos la contraseña
+    });
+  }
+
+  // NUEVO: Método para cambiar la contraseña obligatoria en el primer login
+  async cambiarContrasenaInicial(usuarioId: string, nuevaContrasena: string): Promise<boolean> {
+    const usuario = await this.usuarioRepository.findOneBy({ usuario_id: usuarioId });
+    
+    if (!usuario) {
+      throw new BadRequestException('Usuario no encontrado');
+    }
+
+    if (!usuario.debe_cambiar_contrasena) {
+      throw new BadRequestException('El usuario ya ha cambiado su contraseña inicial');
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    usuario.contrasena = await bcrypt.hash(nuevaContrasena, salt);
+    usuario.debe_cambiar_contrasena = false;
+    
+    await this.usuarioRepository.save(usuario);
+    return true;
+  }
 }

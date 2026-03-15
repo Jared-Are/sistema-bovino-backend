@@ -31,6 +31,24 @@ export class SaludService {
     });
   }
 
+  async actualizarTratamiento(id: number, datos: any, fincaId: number) {
+    const tratamiento = await this.tratamientosRepo.findOne({
+      where: { id, fincaId }
+    });
+    if (!tratamiento) throw new NotFoundException('Tratamiento no encontrado o no pertenece a tu finca');
+
+    return this.tratamientosRepo.update(id, datos);
+  }
+
+  async eliminarTratamiento(id: number, fincaId: number) {
+    const tratamiento = await this.tratamientosRepo.findOne({
+      where: { id, fincaId }
+    });
+    if (!tratamiento) throw new NotFoundException('Tratamiento no encontrado o no pertenece a tu finca');
+
+    return this.tratamientosRepo.softDelete(id);
+  }
+
   // =====================================
   // VACUNAS
   // =====================================
@@ -49,5 +67,23 @@ export class SaludService {
       relations: ['animal'],
       order: { fecha: 'DESC' }
     });
+  }
+
+  async actualizarVacuna(id: number, datos: any, fincaId: number) {
+    const vacuna = await this.vacunasRepo.findOne({
+      where: { id, fincaId }
+    });
+    if (!vacuna) throw new NotFoundException('Vacuna no encontrada o no pertenece a tu finca');
+
+    return this.vacunasRepo.update(id, datos);
+  }
+
+  async eliminarVacuna(id: number, fincaId: number) {
+    const vacuna = await this.vacunasRepo.findOne({
+      where: { id, fincaId }
+    });
+    if (!vacuna) throw new NotFoundException('Vacuna no encontrada o no pertenece a tu finca');
+
+    return this.vacunasRepo.softDelete(id);
   }
 }

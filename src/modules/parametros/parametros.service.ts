@@ -17,8 +17,28 @@ export class ParametrosService {
     return this.razaRepo.save({ nombre, descripcion, finca: { finca_id: fincaId } as any });
   }
 
-  async obtenerRazas() {
-    return this.razaRepo.find();
+  async obtenerRazas(fincaId: number) {
+    return this.razaRepo.find({
+        where: { finca: { finca_id: fincaId } }
+    });
+  }
+
+  async actualizarRaza(id: number, datos: { nombre?: string; descripcion?: string }, fincaId: number) {
+    const raza = await this.razaRepo.findOne({
+        where: { raza_id: id, finca: { finca_id: fincaId } }
+    });
+    if (!raza) throw new Error('Raza no encontrada o no pertenece a tu finca');
+    
+    return this.razaRepo.update(id, datos);
+  }
+
+  async eliminarRaza(id: number, fincaId: number) {
+    const raza = await this.razaRepo.findOne({
+        where: { raza_id: id, finca: { finca_id: fincaId } }
+    });
+    if (!raza) throw new Error('Raza no encontrada o no pertenece a tu finca');
+
+    return this.razaRepo.softDelete(id);
   }
 
   // --- LOTES ---

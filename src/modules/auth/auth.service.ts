@@ -56,4 +56,9 @@ export class AuthService {
       }
     };
   }
+
+  // Método puente para delegar el cambio de contraseña al UsuariosService
+  async cambiarContrasena(usuarioId: string, nuevaContrasena: string) {
+    return this.usuariosService.cambiarContrasenaInicial(usuarioId, nuevaContrasena);
+  }
 }
