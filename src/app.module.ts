@@ -6,6 +6,10 @@ import { FincasModule } from './modules/fincas/fincas.module';
 import { UsuariosModule } from './modules/usuarios/usuarios.module';
 import { AnimalesModule } from './modules/animales/animales.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { SaludModule } from './modules/salud/salud.module';
+import { ReproduccionModule } from './modules/reproduccion/reproduccion.module';
+import { ProduccionModule } from './modules/produccion/produccion.module';
+import { NotificacionesModule } from './modules/notificaciones/notificaciones.module';
 
 @Module({
   imports: [
@@ -39,6 +43,10 @@ import { AuthModule } from './modules/auth/auth.module';
     AuthModule,
     AnimalesModule,
     ParametrosModule,
+    SaludModule,
+    ReproduccionModule,
+    ProduccionModule,
+    NotificacionesModule,
   ],
   controllers: [],
   providers: [],

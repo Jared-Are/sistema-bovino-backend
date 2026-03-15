@@ -67,4 +67,8 @@ export class Animal {
 
   @Column({ type: 'timestamptz', nullable: true })
   fecha_eliminacion: Date;
+
+    @Column({ default: 'Vacía' }) // 'Vacía', 'Gestación', 'Lactancia'
+  estado_reproductivo: string;
+
 }
