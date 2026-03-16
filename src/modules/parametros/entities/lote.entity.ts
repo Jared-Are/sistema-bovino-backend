@@ -14,5 +14,5 @@ export class Lote {
   finca: Finca;
 
   @Column({ type: 'timestamptz', nullable: true })
-  fecha_eliminacion: Date;
+  fecha_eliminacion: Date | null;
 }

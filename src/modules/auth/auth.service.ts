@@ -51,7 +51,11 @@ export class AuthService {
         id: usuario.usuario_id,
         nombre: usuario.nombre,
         rol: usuario.rol,
-        fincaId: usuario.finca.finca_id,
+        finca: usuario.finca ? {  
+          id: usuario.finca.finca_id,
+          nombre: usuario.finca.nombre,
+          ubicacion: usuario.finca.ubicacion
+        } : null,
         debeCambiarContrasena: usuario.debe_cambiar_contrasena // Para forzar el cambio en el frontend
       }
     };
