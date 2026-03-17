@@ -1,9 +1,9 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, W } from 'typeorm';
 import { Finca } from '../../fincas/entities/finca.entity';
 import { Raza } from '../../parametros/entities/raza.entity';
 import { Lote } from '../../parametros/entities/lote.entity';
 import { Potrero } from '../../parametros/entities/potrero.entity';
-import { SexoAnimal } from '../../../common/enums';
+import { EstadoReproductivo, SexoAnimal } from '../../../common/enums';
 
 @Entity('animales')
 export class Animal {
@@ -34,8 +34,8 @@ export class Animal {
   @Column({ length: 255, nullable: true })
   imagen: string;
 
-  @Column({ default: 'Vacía' })
-  estado_reproductivo: string;
+  @Column({ type: 'enum', enum: EstadoReproductivo, default: EstadoReproductivo.VACIA })
+  estado_reproductivo: EstadoReproductivo;
 
   @CreateDateColumn({ type: 'timestamptz' })
   fecha_creacion: Date;

@@ -1,5 +1,5 @@
 import { IsString, IsNumber, IsOptional, IsEnum, IsDateString, Min, Max } from 'class-validator';
-import { SexoAnimal } from '../../../common/enums';
+import { SexoAnimal, EstadoReproductivo } from '../../../common/enums';
 
 export class CreateAnimalDto {
   @IsString()
@@ -54,4 +54,8 @@ export class CreateAnimalDto {
   @IsString()
   @IsOptional()
   imagen?: string;
+
+  @IsEnum(EstadoReproductivo)
+  @IsOptional()
+  estado_reproductivo?: EstadoReproductivo;
 }

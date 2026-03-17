@@ -26,7 +26,7 @@ export class AnimalesService {
       fecha_nacimiento: createAnimalDto.fecha_nacimiento,
       fecha_destete: createAnimalDto.fecha_destete || null,
       imagen: createAnimalDto.imagen || null,
-      estado_reproductivo: 'Vacía',
+      estado_reproductivo: createAnimalDto.estado_reproductivo || 'Vacía',
       finca: { finca_id: fincaId },
     };
 
@@ -91,7 +91,7 @@ export class AnimalesService {
 }
   
   if (updateAnimalDto.imagen !== undefined) animal.imagen = updateAnimalDto.imagen;
-  if (updateAnimalDto.estado_reproductivo) animal.estado_reproductivo = updateAnimalDto.estado_reproductivo;
+  if (updateAnimalDto.estado_reproductivo) animal.estado_reproductivo = updateAnimalDto.estado_reproductivo as any;
 
   if (updateAnimalDto.raza_id) animal.raza = { raza_id: updateAnimalDto.raza_id } as any;
   if (updateAnimalDto.lote_id) animal.lote = { lote_id: updateAnimalDto.lote_id } as any;

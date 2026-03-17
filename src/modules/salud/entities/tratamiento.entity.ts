@@ -1,35 +1,39 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn, DeleteDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, DeleteDateColumn } from 'typeorm';
 import { Animal } from '../../animales/entities/animal.entity';
+import { TipoTratamiento } from './tipo-tratamiento.entity';
+import { EstadoTratamiento } from '../../../common/enums';
 
 @Entity('tratamientos')
 export class Tratamiento {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
-  tipo: string; // Ej: "Antibiótico", "Desparasitante", "Vitamina"
+  @Column({ name: 'tipo_tratamiento_id' })
+  tipo_tratamiento_id: number;
 
-  @Column()
-  veterinario: string; // Quién lo aplicó
-
-  @Column({ default: 'activo' })
-  estado: string; // 'activo', 'completado', 'suspendido'
+  @Column({ type: 'enum', enum: EstadoTratamiento, default: EstadoTratamiento.ACTIVO })
+  estado: EstadoTratamiento;
 
   @Column({ type: 'date' })
-  fecha: string;
+  fecha: Date;
 
-  // --- RELACIONES ---
-  @ManyToOne(() => Animal, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'animal_id' })
-  animal: Animal;
+  @Column({ name: 'animal_id' })
+  animal_id: number;
 
-  // Aislamiento SaaS
-  @Column({ name: 'finca_id' })
-  fincaId: number;
+  @Column({ type: 'text', nullable: true })
+  descripcion: string;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'fecha_creacion' })
   fecha_creacion: Date;
 
-  @DeleteDateColumn({ type: 'timestamptz', nullable: true })
+  @DeleteDateColumn({ name: 'fecha_eliminacion' })
   fecha_eliminacion: Date;
+
+  @ManyToOne(() => TipoTratamiento)
+  @JoinColumn({ name: 'tipo_tratamiento_id' })
+  tipo_tratamiento: TipoTratamiento;
+
+  @ManyToOne(() => Animal)
+  @JoinColumn({ name: 'animal_id' })
+  animal: Animal;
 }

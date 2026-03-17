@@ -3,11 +3,12 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { SaludService } from './salud.service';
 import { SaludController } from './salud.controller';
 import { Tratamiento } from './entities/tratamiento.entity';
-import { Vacuna } from './entities/vacuna.entity';
+import { TipoTratamiento } from './entities/tipo-tratamiento.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Tratamiento, Vacuna])], // <-- Le avisamos a TypeORM de las nuevas tablas
+  imports: [TypeOrmModule.forFeature([Tratamiento, TipoTratamiento])],
   controllers: [SaludController],
   providers: [SaludService],
+  exports: [SaludService],
 })
 export class SaludModule {}
