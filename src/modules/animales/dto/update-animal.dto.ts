@@ -3,6 +3,11 @@ import { CreateAnimalDto } from './create-animal.dto';
 import { IsOptional, IsNumber, IsEnum, Min, Max, IsDateString, IsString } from 'class-validator';
 import { EstadoReproductivo } from 'src/common/enums';
 export class UpdateAnimalDto extends PartialType(CreateAnimalDto) {
+ 
+  @IsString()
+  @IsOptional()
+  nombre?: string;
+
   @IsNumber()
   @IsOptional()
   @Min(20)
@@ -24,4 +29,20 @@ export class UpdateAnimalDto extends PartialType(CreateAnimalDto) {
   @IsNumber()
   @IsOptional()
   potrero_id?: number;
+
+  @IsString()
+  @IsOptional()
+  imagen?: string;
+
+  @IsNumber()
+  @IsOptional()
+  animal_madre_id?: number;
+
+  @IsNumber()
+  @IsOptional()
+  animal_padre_id?: number;
+
+  @IsNumber()
+  @IsOptional()
+  raza_id?: number;
 }

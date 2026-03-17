@@ -69,42 +69,31 @@ export class AnimalesService {
 
   async update(id: number, updateAnimalDto: UpdateAnimalDto, fincaId: number) {
   const animal = await this.findOne(id, fincaId);
-  
-  const fechaNacimiento = updateAnimalDto.fecha_nacimiento || animal.fecha_nacimiento;
-  const fechaDestete = updateAnimalDto.fecha_destete || animal.fecha_destete;
-  
-  if (fechaDestete && new Date(fechaDestete) < new Date(fechaNacimiento)) {
-    throw new BadRequestException('La fecha de destete no puede ser anterior a la fecha de nacimiento');
-  }
-
-  if (updateAnimalDto.arete) animal.arete = updateAnimalDto.arete;
+    
   if (updateAnimalDto.nombre !== undefined) animal.nombre = updateAnimalDto.nombre;
-  if (updateAnimalDto.sexo) animal.sexo = updateAnimalDto.sexo;
-  if (updateAnimalDto.peso_nacimiento !== undefined) animal.peso_nacimiento = updateAnimalDto.peso_nacimiento;
   if (updateAnimalDto.peso_actual !== undefined) animal.peso_actual = updateAnimalDto.peso_actual;
-  if (updateAnimalDto.fecha_nacimiento) animal.fecha_nacimiento = new Date(updateAnimalDto.fecha_nacimiento);
   
   if (updateAnimalDto.fecha_destete !== undefined) {
-  animal.fecha_destete = updateAnimalDto.fecha_destete 
-    ? new Date(updateAnimalDto.fecha_destete) 
-    : null as any; 
-}
-  
+    const nuevaFecha = new Date(updateAnimalDto.fecha_destete);
+    if (nuevaFecha < animal.fecha_nacimiento) {
+      throw new BadRequestException('La fecha de destete no puede ser anterior al nacimiento');
+    }
+    animal.fecha_destete = nuevaFecha;
+  }
+ 
   if (updateAnimalDto.imagen !== undefined) animal.imagen = updateAnimalDto.imagen;
-  if (updateAnimalDto.estado_reproductivo) animal.estado_reproductivo = updateAnimalDto.estado_reproductivo as any;
-
-  if (updateAnimalDto.raza_id) animal.raza = { raza_id: updateAnimalDto.raza_id } as any;
-  if (updateAnimalDto.lote_id) animal.lote = { lote_id: updateAnimalDto.lote_id } as any;
-  if (updateAnimalDto.potrero_id) animal.potrero = { potrero_id: updateAnimalDto.potrero_id } as any;
-  if (updateAnimalDto.animal_madre_id) animal.madre = { animal_id: updateAnimalDto.animal_madre_id } as any;
-  if (updateAnimalDto.animal_padre_id) animal.padre = { animal_id: updateAnimalDto.animal_padre_id } as any;
+  if (updateAnimalDto.estado_reproductivo !== undefined) animal.estado_reproductivo = updateAnimalDto.estado_reproductivo as any;
+  if (updateAnimalDto.raza_id !== undefined) animal.raza = { raza_id: updateAnimalDto.raza_id } as any;
+  if (updateAnimalDto.lote_id !== undefined) animal.lote = { lote_id: updateAnimalDto.lote_id } as any;
+  if (updateAnimalDto.potrero_id !== undefined) animal.potrero = { potrero_id: updateAnimalDto.potrero_id } as any;
+  if (updateAnimalDto.animal_madre_id !== undefined) animal.madre = { animal_id: updateAnimalDto.animal_madre_id } as any;
+  if (updateAnimalDto.animal_padre_id !== undefined) animal.padre = { animal_id: updateAnimalDto.animal_padre_id } as any;
 
   return this.animalesRepository.save(animal);
 }
 
   async remove(id: number, fincaId: number) {
-    const animal = await this.findOne(id, fincaId);
-    animal.fecha_eliminacion = new Date();
-    return this.animalesRepository.save(animal);
+    await this.findOne(id, fincaId); 
+    return this.animalesRepository.softDelete(id); 
   }
 }

@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, W } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, W, DeleteDateColumn } from 'typeorm';
 import { Finca } from '../../fincas/entities/finca.entity';
 import { Raza } from '../../parametros/entities/raza.entity';
 import { Lote } from '../../parametros/entities/lote.entity';
@@ -43,9 +43,8 @@ export class Animal {
   @UpdateDateColumn({ type: 'timestamptz' })
   fecha_actualizacion: Date;
 
-  @Column({ type: 'timestamptz', nullable: true })
+  @DeleteDateColumn({ type: 'timestamptz', nullable: true })
   fecha_eliminacion: Date;
-
   // --- RELACIONES ---
   @ManyToOne(() => Finca)
   @JoinColumn({ name: 'finca_id' })
