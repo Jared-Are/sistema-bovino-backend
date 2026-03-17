@@ -18,11 +18,12 @@ export class RegistrarMontaDto {
   @IsOptional()
   fecha_programacion?: string;
 
-  @IsOptional()
-  hembra?: any;
+  // 👇 Aquí está la magia: Usamos exactamente lo que el Servicio pide
+  @IsNotEmpty()
+  animalHembraId: number;
 
   @IsOptional()
-  macho?: any;
+  animalMachoId?: number;
 }
 
 // DIAGNÓSTICO
