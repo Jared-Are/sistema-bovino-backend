@@ -3,12 +3,12 @@ import { PartialType } from '@nestjs/mapped-types';
 
 // DTO PARA LECHE
 export class RegistrarLecheDto {
-  @IsString()
-  @IsNotEmpty()
+  @IsString({ message: 'El número de producción debe ser texto' })
+  @IsNotEmpty({ message: 'El número de producción es obligatorio' })
   numero_produccion: string;
 
   @IsNumber({}, { message: 'La cantidad (Litros) debe ser un número' })
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'La cantidad es obligatoria' })
   cantidad: number;
 
   @IsOptional()
@@ -20,7 +20,7 @@ export class ActualizarLecheDto extends PartialType(RegistrarLecheDto) {}
 // DTO PARA CARNE
 export class RegistrarCarneDto {
   @IsNumber({}, { message: 'El peso del canal debe ser un número' })
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'El peso del canal es obligatorio' })
   peso_canal: number;
 
   @IsOptional()
