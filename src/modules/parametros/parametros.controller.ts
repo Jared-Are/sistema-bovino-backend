@@ -28,6 +28,12 @@ export class ParametrosController {
     return this.parametrosService.obtenerRazas(usuario.fincaId);
   }
 
+  @Get('razas/:id')
+  @Roles(RolUsuario.PROPIETARIO, RolUsuario.VETERINARIO, RolUsuario.OPERARIO)
+  obtenerRazaPorId(@Param('id') id: string, @UsuarioActual() usuario: any) {
+    return this.parametrosService.obtenerRazaPorId(+id, usuario.fincaId);
+  }
+
   @Patch('razas/:id')
   @Roles(RolUsuario.PROPIETARIO)
   actualizarRaza(@Param('id') id: string, @Body() body: ActualizarRazaDto, @UsuarioActual() usuario: any) {
@@ -53,6 +59,12 @@ export class ParametrosController {
     return this.parametrosService.obtenerLotes(usuario.fincaId);
   }
 
+  @Get('lotes/:id')
+  @Roles(RolUsuario.PROPIETARIO, RolUsuario.VETERINARIO, RolUsuario.OPERARIO)
+  obtenerLotePorId(@Param('id') id: string, @UsuarioActual() usuario: any) {
+    return this.parametrosService.obtenerLotePorId(+id, usuario.fincaId);
+  }
+
   @Patch('lotes/:id')
   @Roles(RolUsuario.PROPIETARIO)
   actualizarLote(@Param('id') id: string, @Body() body: ActualizarLoteDto, @UsuarioActual() usuario: any) {
@@ -76,6 +88,12 @@ export class ParametrosController {
   @Roles(RolUsuario.PROPIETARIO, RolUsuario.VETERINARIO, RolUsuario.OPERARIO)
   obtenerPotreros(@UsuarioActual() usuario: any) {
     return this.parametrosService.obtenerPotreros(usuario.fincaId);
+  }
+
+  @Get('potreros/:id')
+  @Roles(RolUsuario.PROPIETARIO, RolUsuario.VETERINARIO, RolUsuario.OPERARIO)
+  obtenerPotreroPorId(@Param('id') id: string, @UsuarioActual() usuario: any) {
+    return this.parametrosService.obtenerPotreroPorId(+id, usuario.fincaId);
   }
 
   @Patch('potreros/:id')

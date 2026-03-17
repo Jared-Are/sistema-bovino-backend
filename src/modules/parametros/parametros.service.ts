@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository } from 'typeorm'; 
 import { Raza } from './entities/raza.entity';
 import { Lote } from './entities/lote.entity';
 import { Potrero } from './entities/potrero.entity';
@@ -13,6 +13,7 @@ export class ParametrosService {
     @InjectRepository(Potrero) private potreroRepo: Repository<Potrero>,
   ) { }
 
+  // --- RAZAS ---
   async crearRaza(datos: any, fincaId: number) {
     return this.razaRepo.save({ ...datos, finca: { finca_id: fincaId } as any });
   }
@@ -23,22 +24,22 @@ export class ParametrosService {
     });
   }
 
-  async actualizarRaza(id: number, datos: { nombre?: string; descripcion?: string }, fincaId: number) {
+  async obtenerRazaPorId(id: number, fincaId: number) {
     const raza = await this.razaRepo.findOne({
-        where: { raza_id: id, finca: { finca_id: fincaId } }
+      where: { raza_id: id, finca: { finca_id: fincaId } }
     });
-    if (!raza) throw new Error('Raza no encontrada o no pertenece a tu finca');
-    
+    if (!raza) throw new NotFoundException(`Raza con ID ${id} no encontrada en tu finca`);
+    return raza;
+  }
+
+  async actualizarRaza(id: number, datos: { nombre?: string; descripcion?: string }, fincaId: number) {
+    await this.obtenerRazaPorId(id, fincaId); // Reutilizamos la validación de Sherly
     return this.razaRepo.update(id, datos);
   }
 
   async eliminarRaza(id: number, fincaId: number) {
-    const raza = await this.razaRepo.findOne({
-        where: { raza_id: id, finca: { finca_id: fincaId } }
-    });
-    if (!raza) throw new Error('Raza no encontrada o no pertenece a tu finca');
-
-    return this.razaRepo.softDelete(id);
+    await this.obtenerRazaPorId(id, fincaId);
+    return this.razaRepo.softDelete(id); // Tu borrado seguro
   }
 
   // --- LOTES ---
@@ -55,23 +56,21 @@ export class ParametrosService {
     });
   }
 
-  async actualizarLote(id: number, datos: any, fincaId: number) {
-    // Primero verificamos que pertenezca a la finca
+  async obtenerLotePorId(id: number, fincaId: number) {
     const lote = await this.loteRepo.findOne({
-        where: { lote_id: id, finca: { finca_id: fincaId } }
+      where: { lote_id: id, finca: { finca_id: fincaId } }
     });
-    if (!lote) throw new Error('Lote no encontrado o no pertenece a tu finca');
-    
+    if (!lote) throw new NotFoundException(`Lote con ID ${id} no encontrado en tu finca`);
+    return lote;
+  }
+
+  async actualizarLote(id: number, datos: any, fincaId: number) {
+    await this.obtenerLotePorId(id, fincaId);
     return this.loteRepo.update(id, datos);
   }
 
   async eliminarLote(id: number, fincaId: number) {
-    // Verificamos pertenencia antes de borrar lógicamente
-    const lote = await this.loteRepo.findOne({
-        where: { lote_id: id, finca: { finca_id: fincaId } }
-    });
-    if (!lote) throw new Error('Lote no encontrado o no pertenece a tu finca');
-
+    await this.obtenerLotePorId(id, fincaId);
     return this.loteRepo.softDelete(id);
   }
 
@@ -89,21 +88,21 @@ export class ParametrosService {
     });
   }
 
-  async actualizarPotrero(id: number, datos: any, fincaId: number) {
+  async obtenerPotreroPorId(id: number, fincaId: number) {
     const potrero = await this.potreroRepo.findOne({
-        where: { potrero_id: id, finca: { finca_id: fincaId } }
+      where: { potrero_id: id, finca: { finca_id: fincaId } }
     });
-    if (!potrero) throw new Error('Potrero no encontrado o no pertenece a tu finca');
+    if (!potrero) throw new NotFoundException(`Potrero con ID ${id} no encontrado en tu finca`);
+    return potrero;
+  }
 
+  async actualizarPotrero(id: number, datos: any, fincaId: number) {
+    await this.obtenerPotreroPorId(id, fincaId);
     return this.potreroRepo.update(id, datos);
   }
 
   async eliminarPotrero(id: number, fincaId: number) {
-    const potrero = await this.potreroRepo.findOne({
-        where: { potrero_id: id, finca: { finca_id: fincaId } }
-    });
-    if (!potrero) throw new Error('Potrero no encontrado o no pertenece a tu finca');
-
+    await this.obtenerPotreroPorId(id, fincaId);
     return this.potreroRepo.softDelete(id);
   }
 }

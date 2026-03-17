@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { Finca } from '../../fincas/entities/finca.entity';
 import { Raza } from '../../parametros/entities/raza.entity';
 import { Lote } from '../../parametros/entities/lote.entity';
@@ -34,6 +34,18 @@ export class Animal {
   @Column({ length: 255, nullable: true })
   imagen: string;
 
+  @Column({ default: 'Vacía' })
+  estado_reproductivo: string;
+
+  @CreateDateColumn({ type: 'timestamptz' })
+  fecha_creacion: Date;
+
+  @UpdateDateColumn({ type: 'timestamptz' })
+  fecha_actualizacion: Date;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  fecha_eliminacion: Date;
+
   // --- RELACIONES ---
   @ManyToOne(() => Finca)
   @JoinColumn({ name: 'finca_id' })
@@ -58,17 +70,4 @@ export class Animal {
   @ManyToOne(() => Animal, { nullable: true })
   @JoinColumn({ name: 'animal_padre_id' })
   padre: Animal;
-
-  @CreateDateColumn({ type: 'timestamptz' })
-  fecha_creacion: Date;
-
-  @UpdateDateColumn({ type: 'timestamptz' })
-  fecha_actualizacion: Date;
-
-  @Column({ type: 'timestamptz', nullable: true })
-  fecha_eliminacion: Date;
-
-    @Column({ default: 'Vacía' }) // 'Vacía', 'Gestación', 'Lactancia'
-  estado_reproductivo: string;
-
 }

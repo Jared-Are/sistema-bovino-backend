@@ -13,6 +13,6 @@ export class Lote {
   @JoinColumn({ name: 'finca_id' })
   finca: Finca;
 
-  @DeleteDateColumn({ type: 'timestamptz', nullable: true })
+@DeleteDateColumn({ type: 'timestamptz', nullable: true })
   fecha_eliminacion: Date;
 }

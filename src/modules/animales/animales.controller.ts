@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
 import { AnimalesService } from './animales.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UsuarioActual } from '../../common/decorators/usuario.decorator';
@@ -13,16 +13,15 @@ export class AnimalesController {
   constructor(private readonly animalesService: AnimalesService) {}
 
   @Post()
+  @HttpCode(HttpStatus.CREATED)
   @Roles(RolUsuario.PROPIETARIO, RolUsuario.OPERARIO)
   create(@Body() body: CrearAnimalDto, @UsuarioActual() usuario: any) {
-    // Le pasamos el cuerpo de la petición Y el ID de su finca
     return this.animalesService.create(body, usuario.fincaId);
   }
 
   @Get()
   @Roles(RolUsuario.PROPIETARIO, RolUsuario.VETERINARIO, RolUsuario.OPERARIO)
   findAll(@UsuarioActual() usuario: any) {
-    // ¡Solo trae las vacas de SU finca! (Aislamiento SaaS)
     return this.animalesService.findAll(usuario.fincaId);
   }
 
