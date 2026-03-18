@@ -1,15 +1,17 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, IsNull } from 'typeorm';
 import { ProduccionCarne } from './entities/produccion-carne.entity';
 import { ProduccionLechera } from './entities/produccion-lechera.entity';
+import { Animal } from '../animales/entities/animal.entity';
 
 @Injectable()
 export class ProduccionService {
   constructor(
     @InjectRepository(ProduccionCarne) private produccionCarneRepo: Repository<ProduccionCarne>,
     @InjectRepository(ProduccionLechera) private produccionLecheraRepo: Repository<ProduccionLechera>,
-  ) {}
+    @InjectRepository(Animal) private animalRepo: Repository<Animal>,
+  ) { }
 
   // =====================================
   // PRODUCCIÓN LECHERA
@@ -19,14 +21,21 @@ export class ProduccionService {
       ...datos,
       fincaId,
       animal: { animal_id: datos.animalId } // Relacionamos con la vaca ordeñada
+    }) as unknown as ProduccionLechera;
+    await this.produccionLecheraRepo.save(nueva);
+
+    return this.produccionLecheraRepo.findOne({
+      where: { id: nueva.id },
+      relations: ['animal'],
+      withDeleted: true
     });
-    return this.produccionLecheraRepo.save(nueva);
   }
 
   async obtenerLeche(fincaId: number) {
     return this.produccionLecheraRepo.find({
-      where: { fincaId },
+      where: { fincaId, fecha_eliminacion: IsNull() },
       relations: ['animal'],
+      withDeleted: true,
       order: { fecha_creacion: 'DESC' }
     });
   }
@@ -53,18 +62,45 @@ export class ProduccionService {
   // PRODUCCIÓN DE CARNE
   // =====================================
   async registrarCarne(datos: any, fincaId: number) {
+    // Verificamos el peso del animal antes de registrar la carne
+    const animal = await this.animalRepo.findOne({
+      where: { animal_id: datos.animalId, finca: { finca_id: fincaId } }
+    });
+
+    if (!animal) throw new NotFoundException('Animal no encontrado');
+    const rendimientoMaximo = 0.62; // 62% es el rendimiento máximo teórico de canal
+    const pesoMaximoCanal = Number(animal.peso_actual) * rendimientoMaximo;
+
+    if (Number(datos.peso_canal) > pesoMaximoCanal) {
+      throw new BadRequestException(
+        `El peso del canal (${datos.peso_canal} kg) excede el rendimiento máximo del 62% (${pesoMaximoCanal.toFixed(2)} kg) para un animal de ${animal.peso_actual} kg`
+      );
+    }
+
     const nueva = this.produccionCarneRepo.create({
       ...datos,
       fincaId,
       animal: { animal_id: datos.animalId } // Relacionamos con el animal pesado/sacrificado
+    }) as unknown as ProduccionCarne;
+
+    await this.produccionCarneRepo.save(nueva);
+
+    // Baja automática del animal (sacrificio/venta)
+    await this.animalRepo.softDelete(datos.animalId);
+
+    // Retornamos el registro con los datos del animal para el frontend
+    return this.produccionCarneRepo.findOne({
+      where: { id: nueva.id },
+      relations: ['animal'],
+      withDeleted: true
     });
-    return this.produccionCarneRepo.save(nueva);
   }
 
   async obtenerCarne(fincaId: number) {
     return this.produccionCarneRepo.find({
-      where: { fincaId },
+      where: { fincaId, fecha_eliminacion: IsNull() },
       relations: ['animal'],
+      withDeleted: true,
       order: { fecha_creacion: 'DESC' }
     });
   }
