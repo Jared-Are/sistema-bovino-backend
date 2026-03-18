@@ -36,7 +36,4 @@ export class Tratamiento {
   @ManyToOne(() => Animal)
   @JoinColumn({ name: 'animal_id' })
   animal: Animal;
-
-  @Column({ nullable: true })
-  tipo?: string;
 }
