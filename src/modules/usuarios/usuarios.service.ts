@@ -1,8 +1,10 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Usuario } from './entities/usuario.entity';
 import * as bcrypt from 'bcrypt';
+import { CrearUsuarioDto } from './dto/crear-usuario.dto';
+import { ActualizarUsuarioDto } from './dto/actualizar-usuario.dto';
 
 @Injectable()
 export class UsuariosService {
@@ -11,57 +13,101 @@ export class UsuariosService {
     private usuarioRepository: Repository<Usuario>,
   ) {}
 
-  // Busca al usuario por teléfono e incluye la contraseña oculta de forma segura
   async buscarPorIdentificador(identificador: string): Promise<Usuario | null> {
     return this.usuarioRepository.createQueryBuilder('usuario')
-      .leftJoinAndSelect('usuario.finca', 'finca') // Traemos la relación (SaaS)
+      .leftJoinAndSelect('usuario.finca', 'finca')
       .where('usuario.telefono = :telefono', { telefono: identificador })
-      .addSelect('usuario.contrasena') // Obligamos a traer la contraseña oculta para poder compararla con Bcrypt
+      .addSelect('usuario.contrasena')
       .getOne();
   }
 
-  // NUEVO: Método para crear usuarios encriptando la contraseña (Excelente para Testing)
-  async crearUsuario(datos: Partial<Usuario>, fincaId: number): Promise<Usuario> {
-    // 1. Verificamos que el teléfono no exista ya en la base de datos
+  async crearUsuario(datos: CrearUsuarioDto, fincaId: number): Promise<Usuario> {
     const existe = await this.usuarioRepository.findOne({ where: { telefono: datos.telefono } });
     if (existe) {
       throw new BadRequestException('El teléfono ya está registrado en el sistema.');
     }
 
-    // 2. Encriptamos la contraseña (si no mandan una, usamos 'Finca1234' por defecto)
     const contrasenaPlana = datos.contrasena || 'Finca1234';
     const salt = await bcrypt.genSalt(10);
     const contrasenaEncriptada = await bcrypt.hash(contrasenaPlana, salt);
 
-    // 3. Creamos el usuario en memoria
     const nuevoUsuario = this.usuarioRepository.create({
       ...datos,
       contrasena: contrasenaEncriptada,
-      finca: { finca_id: fincaId }, // Vinculamos al usuario con su Finca (Multi-Tenant)
-      debe_cambiar_contrasena: true // Forzamos el cambio en el primer login
+      finca: { finca_id: fincaId },
+      debe_cambiar_contrasena: true
     });
 
-    // 4. Guardamos en base de datos
     return this.usuarioRepository.save(nuevoUsuario);
   }
 
+  // Lista COMPLETA con finca
   async obtenerUsuariosDeFinca(fincaId: number) {
     return this.usuarioRepository.find({
       where: { finca: { finca_id: fincaId } },
-      select: ['usuario_id', 'telefono', 'rol', 'estado', 'fecha_creacion'] // Ocultamos la contraseña
+      relations: ['finca', 'rol'], // Trae relaciones
+      select: [
+        'usuario_id', 'nombre', 'email', 'telefono', 
+        'rol', 'estado', 'fecha_creacion', 'debe_cambiar_contrasena'
+      ]
     });
   }
 
-  // NUEVO: Método para cambiar la contraseña obligatoria en el primer login
+  // usuario por ID
+  async obtenerUsuarioPorId(usuarioId: string, fincaId: number) {
+    const usuario = await this.usuarioRepository.findOne({
+      where: { 
+        usuario_id: usuarioId,
+        finca: { finca_id: fincaId }
+      },
+      relations: ['finca']
+    });
+
+    if (!usuario) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+
+    return usuario;
+  }
+
+  // Actualizar usuario
+  async actualizarUsuario(usuarioId: string, datos: ActualizarUsuarioDto, fincaId: number) {
+    const usuario = await this.usuarioRepository.findOne({
+      where: { 
+        usuario_id: usuarioId,
+        finca: { finca_id: fincaId }
+      }
+    });
+
+    if (!usuario) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+
+    // Actualiza solo campos enviados
+    Object.assign(usuario, datos);
+    
+    return this.usuarioRepository.save(usuario);
+  }
+
+  // Eliminar usuario
+  async eliminarUsuario(usuarioId: string, fincaId: number) {
+    const resultado = await this.usuarioRepository.delete({
+      usuario_id: usuarioId,
+      finca: { finca_id: fincaId }
+    });
+
+    if (resultado.affected === 0) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+
+    return { message: 'Usuario eliminado correctamente' };
+  }
+
   async cambiarContrasenaInicial(usuarioId: string, nuevaContrasena: string): Promise<boolean> {
     const usuario = await this.usuarioRepository.findOneBy({ usuario_id: usuarioId });
     
-    if (!usuario) {
-      throw new BadRequestException('Usuario no encontrado');
-    }
-
-    if (!usuario.debe_cambiar_contrasena) {
-      throw new BadRequestException('El usuario ya ha cambiado su contraseña inicial');
+    if (!usuario || !usuario.debe_cambiar_contrasena) {
+      throw new BadRequestException('Usuario no válido o ya cambió contraseña');
     }
 
     const salt = await bcrypt.genSalt(10);

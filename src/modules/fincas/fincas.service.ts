@@ -7,7 +7,7 @@ import { Finca } from './entities/finca.entity';
 export class FincasService {
   constructor(
     @InjectRepository(Finca)
-    private readonly fincaRepo: Repository<Finca>,
+    private readonly fincaRepo: Repository<Finca>,  // ✅ Ya está correcto
   ) {}
 
   async crear(nombre: string, ubicacion: string) {
@@ -17,5 +17,12 @@ export class FincasService {
 
   async obtenerTodas() {
     return await this.fincaRepo.find();
+  }
+
+  async obtenerFincasPorUsuario(fincaId: number) {
+    return this.fincaRepo.find({
+      where: { finca_id: fincaId },
+      select: ['finca_id', 'nombre']
+    });
   }
 }
