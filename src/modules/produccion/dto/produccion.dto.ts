@@ -11,11 +11,12 @@ export class RegistrarLecheDto {
   @IsNotEmpty({ message: 'La cantidad es obligatoria' })
   cantidad: number;
 
-  @IsOptional()
-  animal?: any;
+  @IsNumber({}, { message: 'El ID del animal debe ser un número' })
+  @IsNotEmpty({ message: 'El ID del animal es obligatorio' })
+  animalId: number;
 }
 
-export class ActualizarLecheDto extends PartialType(RegistrarLecheDto) {}
+export class ActualizarLecheDto extends PartialType(RegistrarLecheDto) { }
 
 // DTO PARA CARNE
 export class RegistrarCarneDto {
@@ -23,8 +24,9 @@ export class RegistrarCarneDto {
   @IsNotEmpty({ message: 'El peso del canal es obligatorio' })
   peso_canal: number;
 
-  @IsOptional()
-  animal?: any;
+  @IsNumber({}, { message: 'El ID del animal debe ser un número' })
+  @IsNotEmpty({ message: 'El ID del animal es obligatorio' })
+  animalId: number;
 }
 
-export class ActualizarCarneDto extends PartialType(RegistrarCarneDto) {}
+export class ActualizarCarneDto extends PartialType(RegistrarCarneDto) { }
