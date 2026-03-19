@@ -5,6 +5,7 @@ import { Usuario } from './entities/usuario.entity';
 import * as bcrypt from 'bcrypt';
 import { CrearUsuarioDto } from './dto/crear-usuario.dto';
 import { ActualizarUsuarioDto } from './dto/actualizar-usuario.dto';
+import { RolUsuario, EstadoUsuario } from '../../common/enums';  // ← NUEVA LÍNEA
 
 @Injectable()
 export class UsuariosService {
@@ -32,7 +33,6 @@ export class UsuariosService {
     }
   }
 
-  // ... resto del código igual
   const nuevoUsuario = this.usuarioRepository.create({
     ...datos,
     finca: { finca_id: fincaId },
