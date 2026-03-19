@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Finca } from './entities/finca.entity';
@@ -25,4 +25,9 @@ export class FincasService {
       select: ['finca_id', 'nombre']
     });
   }
+  async obtenerPorId(id: number) {
+  const finca = await this.fincaRepo.findOne({ where: { finca_id: id } });
+  if (!finca) throw new NotFoundException('Finca no encontrada');
+  return finca;
+}
 }

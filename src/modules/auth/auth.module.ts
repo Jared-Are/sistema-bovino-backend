@@ -6,10 +6,12 @@ import { AuthService } from './auth.service';
 import { AuthController } from './Auth.controller'; // <-- Corregido a minúscula
 import { UsuariosModule } from '../usuarios/usuarios.module';
 import { JwtStrategy } from './jwt.estrategy'; // <-- Importación correcta de la estrategia
+import { FincasModule } from '../fincas/fincas.module'; // <-- Importamos el módulo de fincas
 
 @Module({
   imports: [
     UsuariosModule, // Necesitamos buscar usuarios
+    FincasModule, // Necesitamos acceder a las fincas
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],

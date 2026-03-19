@@ -1,12 +1,15 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException, NotFoundException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsuariosService } from '../usuarios/usuarios.service';
+import { FincasService } from '../fincas/fincas.service';
 import * as bcrypt from 'bcrypt';
+import { RegistroDto } from './dto/registro.dto';
 
 @Injectable()
 export class AuthService {
   constructor(
     private usuariosService: UsuariosService,
+    private fincasService: FincasService,
     private jwtService: JwtService,
   ) {}
 
@@ -61,8 +64,31 @@ export class AuthService {
     };
   }
 
-  // Método puente para delegar el cambio de contraseña al UsuariosService
-  async cambiarContrasena(usuarioId: string, nuevaContrasena: string) {
-    return this.usuariosService.cambiarContrasenaInicial(usuarioId, nuevaContrasena);
+  async registro(datos: RegistroDto) {
+    const existe = await this.usuariosService.buscarPorTelefono(datos.telefono);
+
+    if (existe) {
+      throw new BadRequestException('El teléfono ya está registrado');
+    }
+
+    const finca = await this.fincasService.obtenerPorId(datos.fincaId);
+
+    if (!finca) {
+      throw new NotFoundException('La finca no existe');
+    }
+
+
+    const hashedPassword = await bcrypt.hash(datos.contrasena, 10);
+
+    const nuevoUsuario = await this.usuariosService.crearUsuarioPublico({
+      nombre: datos.nombre,
+      telefono: datos.telefono,
+      contrasena: hashedPassword,
+      rol: datos.rol,
+      fincaId: datos.fincaId,
+    });
+    // Genera el token después de crear el usuario
+    const token = this.generarToken(nuevoUsuario);  
+    return token;
   }
 }

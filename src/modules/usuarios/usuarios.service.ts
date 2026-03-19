@@ -120,4 +120,30 @@ export class UsuariosService {
     await this.usuarioRepository.save(usuario);
     return true;
   }
+
+  async buscarPorTelefono(telefono: string) {
+    return this.usuarioRepository.findOne({
+      where: { telefono },
+      relations: ['finca']
+    });
+  }
+
+  async crearUsuarioPublico(datos: {
+    nombre: string;
+    telefono: string;
+    contrasena: string;
+    rol: string;
+    fincaId: number;
+  }) {
+    const nuevoUsuario = new Usuario();
+    nuevoUsuario.nombre = datos.nombre;
+    nuevoUsuario.telefono = datos.telefono;
+    nuevoUsuario.contrasena = datos.contrasena;
+    nuevoUsuario.rol = datos.rol as RolUsuario;
+    nuevoUsuario.finca = { finca_id: datos.fincaId } as any;
+    nuevoUsuario.estado = EstadoUsuario.ACTIVO;
+    nuevoUsuario.debe_cambiar_contrasena = false;
+
+    return this.usuarioRepository.save(nuevoUsuario);
+  }
 }
