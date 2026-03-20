@@ -234,41 +234,30 @@ export class ReproduccionService {
       estado: datos.tipo_parto === 'Aborto' ? 'Aborto' : 'Parto Exitoso',
     });
 
-  // 🌟 AUTOMATIZACIÓN 2: CREAR EL NUEVO TERNERITO (OPCIÓN NUCLEAR SAAS)
+ // 🌟 AUTOMATIZACIÓN 2: CREAR EL NUEVO TERNERITO (HACK DIRECTO A LA BD)
     if (datos.tipo_parto !== 'Aborto') {
         
-        // Convertimos fincaId a Número por si acaso el controlador lo manda como texto
-        const idFincaSeguro = Number(fincaId);
-
+        // Armamos el objeto usando los nombres EXACTOS de las columnas en PostgreSQL
         const nuevaCria = {
             arete: `CRIA-${Date.now().toString().slice(-4)}`,
             nombre: datos.nombre_animal || `Cría de ${diag.monta.hembra.arete}`,
             sexo: datos.sexo || 'Hembra',
-            
-            // Le mandamos las variables en los dos formatos (camelCase y snake_case) 
-            // por si Sherly usa uno u otro en su entidad Animal.
             peso_nacimiento: 35, 
-            pesoNacimiento: 35,
             peso_actual: 35,
-            ultimoPeso: 35,
             fecha_nacimiento: this.getHoy(),
-            fechaNacimiento: this.getHoy(),
             estado_reproductivo: 'Vacía',
-            estadoReproductivo: 'Vacía',
             estado_salud: 'sano',
-            estadoSalud: 'sano',
             
-            // 👇 LA BOMBA NUCLEAR PARA LA FINCA: Alguna de estas 3 tiene que funcionar sí o sí
-            finca: { id: idFincaSeguro }, // Si Sherly lo tiene como relación
-            finca_id: idFincaSeguro,      // Si Sherly lo tiene como columna cruda en snake_case
-            fincaId: idFincaSeguro,       // Si Sherly lo tiene como columna cruda en camelCase
-            
+            // 👇 Le inyectamos las foráneas forzando el nombre real de la base de datos
+            finca_id: fincaId, 
+            finca: { id: fincaId },
+            animal_madre_id: diag.monta.hembra.animal_id,
+            animal_padre_id: diag.monta.macho ? diag.monta.macho.animal_id : null,
             madre: { animal_id: diag.monta.hembra.animal_id },
             padre: diag.monta.macho ? { animal_id: diag.monta.macho.animal_id } : null,
-            
         }; 
 
-        // Guardamos forzando a TypeORM a aceptar el objeto tal cual
+        // Guardamos ignorando las validaciones estrictas de TypeScript
         await this.animalesRepo.save(nuevaCria as any);
     }
     try {
