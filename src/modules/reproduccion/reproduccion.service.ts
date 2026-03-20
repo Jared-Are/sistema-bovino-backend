@@ -35,12 +35,13 @@ export class ReproduccionService {
   // SECCIÓN DE MONTAS
   // =====================================
 
-  async registrarMonta(datos: any, fincaId: number) {
-    if (!datos.numero_monta || !datos.animalHembraId) {
+async registrarMonta(datos: any, fincaId: number) {
+    // Usamos los nombres exactos que vienen del frontend ahora
+    if (!datos.numero_monta || !datos.animal_hembra_id) {
       throw new BadRequestException('El número de monta y el ID de la hembra son obligatorios.');
     }
 
-    const hembra = await this.animalesRepo.findOneBy({ animal_id: datos.animalHembraId });
+    const hembra = await this.animalesRepo.findOneBy({ animal_id: datos.animal_hembra_id });
     if (!hembra || hembra.sexo !== 'Hembra') {
       throw new BadRequestException('La monta solo puede registrarse en animales de sexo Hembra.');
     }
@@ -50,7 +51,7 @@ export class ReproduccionService {
       where: { 
         fincaId, 
         resultado: 'Positivo', 
-        monta: { hembra: { animal_id: datos.animalHembraId } } 
+        monta: { hembra: { animal_id: datos.animal_hembra_id } } 
       },
       relations: ['monta', 'monta.hembra']
     });
@@ -70,14 +71,13 @@ export class ReproduccionService {
       ...datos,
       fincaId,
       fecha_programacion: datos.fecha_programacion || this.getHoy(),
-      hembra: { animal_id: datos.animalHembraId },
-      macho: datos.animalMachoId && datos.animalMachoId !== 'sin-toro' ? { animal_id: datos.animalMachoId } : null,
+      hembra: { animal_id: datos.animal_hembra_id },
+      macho: datos.animal_macho_id ? { animal_id: datos.animal_macho_id } : null,
       estado: 'Programada'
     });
 
     return await this.montasRepo.save(nueva);
   }
-
   async obtenerMontas(fincaId: number) {
     return this.montasRepo.find({
       where: { fincaId },

@@ -2,6 +2,10 @@ import { IsString, IsNotEmpty, IsOptional, IsNumber } from 'class-validator';
 
 // MONTA
 export class RegistrarMontaDto {
+@IsString()
+  @IsNotEmpty()
+  numero_monta: string;
+
   @IsNumber()
   @IsNotEmpty()
   animal_hembra_id: number;
