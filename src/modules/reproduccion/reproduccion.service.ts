@@ -211,9 +211,7 @@ export class ReproduccionService {
   // =====================================
 
   async registrarParto(datos: RegistrarPartoDto, fincaId: number) {
-    if (!fincaId) {
-        throw new Error("Error: El ID de la finca no llegó al servicio.");
-    }
+    if (!fincaId) throw new Error("ID de finca no proporcionado");
 
     const diag = await this.diagnosticosRepo.findOne({
       where: { id: datos.diagnosticoId },
@@ -222,45 +220,55 @@ export class ReproduccionService {
 
     if (!diag) throw new Error('Diagnóstico no encontrado');
 
-    // 🌟 CREACIÓN DEL PARTO (SOLUCIÓN AL ERROR DE TS)
-    const nuevoParto = this.partosRepo.create({
+    // 1. Guardar el Parto (Usando nombres genéricos para evitar el error de TS)
+    const dataParto: any = {
       ...datos,
-      // Usamos [key: string]: any para que no pelee por el nombre de la fecha
-      fecha_parto: this.getHoy(), 
-      fecha: this.getHoy(), // Le mandamos los dos por si acaso
-      diagnostico: { id: diag.id }
-    } as any); 
+      diagnostico: { id: diag.id },
+      fecha_parto: new Date(),
+      fecha: new Date(),
+    };
+    
+    const nuevoParto = await this.partosRepo.save(this.partosRepo.create(dataParto));
 
-    await this.partosRepo.save(nuevoParto);
-
-    await this.partosRepo.save(nuevoParto);
-
-    // 🌟 CREAR LA CRÍA CON QUERY BUILDER (PARA QUE NO SALGA NULL)
+    // 2. Crear la Cría (Aquí es donde suele fallar la Finca)
     if (datos.tipo_parto !== 'Aborto') {
         const nuevaCria = {
             arete: `CRIA-${Date.now().toString().slice(-4)}`,
             nombre: datos.nombre_animal || `Cría de ${diag.monta.hembra.arete}`,
             sexo: datos.sexo || 'Hembra',
-            peso_nacimiento: 35, 
+            peso_nacimiento: 35,
             peso_actual: 35,
-            fecha_nacimiento: this.getHoy(),
+            fecha_nacimiento: new Date(),
             estado_reproductivo: 'Vacía',
             estado_salud: 'sano',
-            // 👇 Usamos los nombres reales de la tabla de Sherly
-            finca_id: Number(fincaId), 
+            
+            // 👇 ESTO ES LO VITAL: Mandamos ambos estilos de nombre
+            finca_id: Number(fincaId),
+            fincaId: Number(fincaId),
+            finca: { id: Number(fincaId) },
+            
+            // Relaciones parentales
             animal_madre_id: diag.monta.hembra.animal_id,
             animal_padre_id: diag.monta.macho ? diag.monta.macho.animal_id : null,
-        }; 
+        };
 
-        await this.animalesRepo.createQueryBuilder()
-            .insert()
-            .into('animales')
-            .values(nuevaCria)
-            .execute();
+        // Intentamos guardar la cría. Si falla el QueryBuilder, usamos el Repo normal
+        try {
+            await this.animalesRepo.createQueryBuilder()
+                .insert()
+                .into('animales')
+                .values(nuevaCria)
+                .execute();
+        } catch (e) {
+            console.log("Falló QueryBuilder, reintentando con Repository...");
+            await this.animalesRepo.save(this.animalesRepo.create(nuevaCria as any));
+        }
     }
 
     return nuevoParto;
   }
+
+  
   async obtenerPartos(fincaId: number) {
     return this.partosRepo.find({
       where: { fincaId },
