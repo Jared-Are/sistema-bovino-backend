@@ -220,43 +220,38 @@ async registrarParto(datos: RegistrarPartoDto, fincaId: number) {
 
     if (!diag) throw new Error('Diagnóstico no encontrado');
 
-    // 1. INSERTAR EL PARTO (MODO DIOS - QUERY BUILDER)
-    // Usamos los nombres reales de las columnas en la DB
-    const insertParto = await this.partosRepo.createQueryBuilder()
-        .insert()
-        .into('partos') 
-        .values({
-            numero_parto: datos.numero_parto,
-            tipo_parto: datos.tipo_parto,
-            finca_id: Number(fincaId), // Inyección directa
-            diagnostico_prenez_id: diag.id,
-            fecha_parto: new Date(),
-            fecha_creacion: new Date()
-        })
-        .returning('*') // Pedimos que nos devuelva el registro creado
-        .execute();
+    // 1. CREAR EL PARTO (Usando fincaId como dice tu Entidad)
+    const nuevoParto = this.partosRepo.create({
+      numero_parto: datos.numero_parto,
+      tipo_parto: datos.tipo_parto,
+      fincaId: Number(fincaId), // 👈 USAMOS fincaId (EL NOMBRE DE LA VARIABLE)
+      diagnostico_prenez: { id: diag.id } // 👈 COINCIDE CON TU @JoinColumn
+    });
 
-    const nuevoParto = insertParto.generatedMaps[0];
+    // Guardamos el parto
+    const partoGuardado = await this.partosRepo.save(nuevoParto);
 
-    // 2. CREAR LA CRÍA (QUERY BUILDER)
+    // 2. CREAR LA CRÍA (MODO SEGURO)
     if (datos.tipo_parto !== 'Aborto') {
-        await this.animalesRepo.createQueryBuilder()
-            .insert()
-            .into('animales')
-            .values({
-                arete: `CRIA-${Date.now().toString().slice(-4)}`,
-                nombre: datos.nombre_animal || `Cría de ${diag.monta.hembra.arete}`,
-                sexo: datos.sexo || 'Hembra',
-                peso_nacimiento: 35,
-                peso_actual: 35,
-                fecha_nacimiento: new Date(),
-                estado_reproductivo: 'Vacía',
-                estado_salud: 'sano',
-                finca_id: Number(fincaId),
-                animal_madre_id: diag.monta.hembra.animal_id,
-                animal_padre_id: diag.monta.macho ? diag.monta.macho.animal_id : null,
-            })
-            .execute();
+      const nuevaCria = {
+        arete: `CRIA-${Date.now().toString().slice(-4)}`,
+        nombre: datos.nombre_animal || `Cría de ${diag.monta.hembra.arete}`,
+        sexo: datos.sexo || 'Hembra',
+        peso_nacimiento: 35,
+        peso_actual: 35,
+        fecha_nacimiento: new Date(),
+        estado_reproductivo: 'Vacía',
+        estado_salud: 'sano',
+        finca_id: Number(fincaId), // Aquí sí usamos snake_case para el insert directo
+        animal_madre_id: diag.monta.hembra.animal_id,
+        animal_padre_id: diag.monta.macho ? diag.monta.macho.animal_id : null,
+      };
+
+      await this.animalesRepo.createQueryBuilder()
+        .insert()
+        .into('animales')
+        .values(nuevaCria)
+        .execute();
     }
 
     // 3. ACTUALIZAR ESTADOS
@@ -268,7 +263,7 @@ async registrarParto(datos: RegistrarPartoDto, fincaId: number) {
       estado: datos.tipo_parto === 'Aborto' ? 'Aborto' : 'Parto Exitoso'
     });
 
-    return nuevoParto;
+    return partoGuardado;
   }
 
   async obtenerPartos(fincaId: number) {
