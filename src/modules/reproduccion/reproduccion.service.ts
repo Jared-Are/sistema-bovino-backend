@@ -220,20 +220,18 @@ async registrarParto(datos: RegistrarPartoDto, fincaId: number) {
 
     if (!diag) throw new Error('Diagnóstico no encontrado');
 
-    // 1. CREAR EL PARTO (Usando fincaId como dice tu Entidad)
-    const nuevoParto = this.partosRepo.create({
+    // 1. GUARDAR EL PARTO (FORZANDO FINCA_ID)
+    // Creamos el objeto exactamente como la DB lo espera
+    const nuevoParto = await this.partosRepo.save({
       numero_parto: datos.numero_parto,
       tipo_parto: datos.tipo_parto,
-      fincaId: Number(fincaId), // 👈 USAMOS fincaId (EL NOMBRE DE LA VARIABLE)
-      diagnostico_prenez: { id: diag.id } // 👈 COINCIDE CON TU @JoinColumn
-    });
+      fincaId: Number(fincaId), // Para satisfacer a la entidad Parto
+      diagnostico_prenez: { id: diag.id }
+    } as any);
 
-    // Guardamos el parto
-    const partoGuardado = await this.partosRepo.save(nuevoParto);
-
-    // 2. CREAR LA CRÍA (MODO SEGURO)
+    // 2. CREAR LA CRÍA (AUTOMATIZACIÓN)
     if (datos.tipo_parto !== 'Aborto') {
-      const nuevaCria = {
+      const dataCria: any = {
         arete: `CRIA-${Date.now().toString().slice(-4)}`,
         nombre: datos.nombre_animal || `Cría de ${diag.monta.hembra.arete}`,
         sexo: datos.sexo || 'Hembra',
@@ -241,17 +239,15 @@ async registrarParto(datos: RegistrarPartoDto, fincaId: number) {
         peso_actual: 35,
         fecha_nacimiento: new Date(),
         estado_reproductivo: 'Vacía',
-        estado_salud: 'sano',
-        finca_id: Number(fincaId), // Aquí sí usamos snake_case para el insert directo
-        animal_madre_id: diag.monta.hembra.animal_id,
-        animal_padre_id: diag.monta.macho ? diag.monta.macho.animal_id : null,
+        // 👇 Aquí está el truco para la entidad de Sherly:
+        // Mandamos el objeto finca completo para que el @JoinColumn lo reconozca
+        finca: { id: Number(fincaId) },
+        madre: { animal_id: diag.monta.hembra.animal_id },
+        padre: diag.monta.macho ? { animal_id: diag.monta.macho.animal_id } : null,
       };
 
-      await this.animalesRepo.createQueryBuilder()
-        .insert()
-        .into('animales')
-        .values(nuevaCria)
-        .execute();
+      // Guardamos la cría usando el repositorio normal para que respete los Enums
+      await this.animalesRepo.save(this.animalesRepo.create(dataCria));
     }
 
     // 3. ACTUALIZAR ESTADOS
@@ -263,7 +259,7 @@ async registrarParto(datos: RegistrarPartoDto, fincaId: number) {
       estado: datos.tipo_parto === 'Aborto' ? 'Aborto' : 'Parto Exitoso'
     });
 
-    return partoGuardado;
+    return nuevoParto;
   }
 
   async obtenerPartos(fincaId: number) {
