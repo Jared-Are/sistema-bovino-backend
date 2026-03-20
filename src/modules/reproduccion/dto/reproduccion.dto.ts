@@ -1,36 +1,37 @@
-import { IsString, IsNotEmpty, IsOptional, IsDateString } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsNumber } from 'class-validator';
 
 // MONTA
 export class RegistrarMontaDto {
-  @IsString()
+  @IsNumber()
   @IsNotEmpty()
-  numero_monta: string;
+  animal_hembra_id: number;
 
   @IsString()
   @IsNotEmpty()
   tipo_monta: string;
 
+  @IsNumber()
+  @IsOptional()
+  animal_macho_id?: number;
+
+  @IsString()
+  @IsOptional()
+  codigo_pajilla?: string;
+
   @IsString()
   @IsOptional()
   estado?: string;
 
-  @IsDateString()
+  @IsString()
   @IsOptional()
   fecha_programacion?: string;
-
-  // 👇 Aquí está la magia: Usamos exactamente lo que el Servicio pide
-  @IsNotEmpty()
-  animalHembraId: number;
-
-  @IsOptional()
-  animalMachoId?: number;
 }
 
 // DIAGNÓSTICO
 export class RegistrarDiagnosticoDto {
-  @IsString()
+  @IsNumber()
   @IsNotEmpty()
-  numero_prenez: string;
+  montaId: number;
 
   @IsString()
   @IsNotEmpty()
@@ -40,16 +41,17 @@ export class RegistrarDiagnosticoDto {
   @IsNotEmpty()
   resultado: string;
 
-  @IsDateString()
-  @IsNotEmpty()
-  fecha_programacion: string;
-
+  @IsString()
   @IsOptional()
-  monta?: any;
+  fecha_programacion?: string;
 }
 
 // PARTO
 export class RegistrarPartoDto {
+  @IsNumber()
+  @IsNotEmpty()
+  diagnosticoId: number;
+
   @IsString()
   @IsNotEmpty()
   numero_parto: string;
@@ -57,7 +59,4 @@ export class RegistrarPartoDto {
   @IsString()
   @IsNotEmpty()
   tipo_parto: string;
-
-  @IsOptional()
-  diagnostico_prenez?: any;
 }

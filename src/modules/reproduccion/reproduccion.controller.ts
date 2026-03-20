@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards, Param, Patch } from '@nestjs/common';
 import { ReproduccionService } from './reproduccion.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UsuarioActual } from '../../common/decorators/usuario.decorator';
@@ -14,7 +14,10 @@ export class ReproduccionController {
 
   @Post('montas')
   @Roles(RolUsuario.PROPIETARIO, RolUsuario.VETERINARIO, RolUsuario.OPERARIO)
-  registrarMonta(@Body() body: RegistrarMontaDto, @UsuarioActual() usuario: any) {
+  registrarMonta(
+    @Body() body: RegistrarMontaDto,
+    @UsuarioActual() usuario: any,
+  ) {
     return this.reproduccionService.registrarMonta(body, usuario.fincaId);
   }
 
@@ -24,10 +27,22 @@ export class ReproduccionController {
     return this.reproduccionService.obtenerMontas(usuario.fincaId);
   }
 
+  @Get('montas/:id')
+  findOne(@Param('id') id: string) {
+    return this.reproduccionService.findOne(+id);
+  }
+
+  @Patch('montas/:id')
+  update(@Param('id') id: string, @Body() updateData: RegistrarMontaDto) {
+    return this.reproduccionService.update(+id, updateData);
+  }
+
   @Post('diagnosticos')
   @Roles(RolUsuario.PROPIETARIO, RolUsuario.VETERINARIO, RolUsuario.OPERARIO)
-  registrarDiagnostico(@Body() body: RegistrarDiagnosticoDto, @UsuarioActual() usuario: any) {
-    // Pasamos el fincaId para aislamiento y el userId para la notificación personalizada
+  registrarDiagnostico(
+    @Body() body: RegistrarDiagnosticoDto,
+    @UsuarioActual() usuario: any,
+  ) {
     return this.reproduccionService.registrarDiagnostico(body, usuario.fincaId, usuario.userId);
   }
 
@@ -39,7 +54,10 @@ export class ReproduccionController {
 
   @Post('partos')
   @Roles(RolUsuario.PROPIETARIO, RolUsuario.VETERINARIO, RolUsuario.OPERARIO)
-  registrarParto(@Body() body: RegistrarPartoDto, @UsuarioActual() usuario: any) {
+  registrarParto(
+    @Body() body: RegistrarPartoDto,
+    @UsuarioActual() usuario: any,
+  ) {
     return this.reproduccionService.registrarParto(body, usuario.fincaId, usuario.userId);
   }
 

@@ -1,4 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { Animal } from '../../animales/entities/animal.entity'; // Asegúrate de la ruta
 
 @Entity('montas')
@@ -15,6 +22,9 @@ export class Monta {
 
   @Column()
   tipo_monta: string; // 'Natural' o 'Artificial'
+
+  @Column({ nullable: true })
+  codigo_pajilla: string;
 
   @Column({ default: 'Programada' })
   estado: string; // 'Programada', 'Realizada', 'Fallida'
