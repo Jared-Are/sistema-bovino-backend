@@ -237,23 +237,27 @@ export class ReproduccionService {
    // 🌟 AUTOMATIZACIÓN 2: CREAR EL NUEVO TERNERITO (SAAS FIX)
     if (datos.tipo_parto !== 'Aborto') {
         
-        // Usamos .create() en lugar de un objeto crudo para que TypeORM aplique la finca correctamente
-        const nuevaCria = this.animalesRepo.create({
+        // Armamos el objeto crudo exactamente con lo que necesita la base de datos
+        const nuevaCria = {
             arete: `CRIA-${Date.now().toString().slice(-4)}`,
             nombre: datos.nombre_animal || `Cría de ${diag.monta.hembra.arete}`,
-            sexo: (datos.sexo || 'Hembra') as any,
+            sexo: datos.sexo || 'Hembra',
             peso_nacimiento: 35, 
             peso_actual: 35,
             fecha_nacimiento: this.getHoy(),
-            estado_reproductivo: 'Vacía' as any,
-            // 👇 SAAS FIX: Le mandamos la finca de las dos formas posibles para asegurar que Sherly lo agarre
-            fincaId: fincaId, 
-            finca: { id: fincaId }, 
+            estado_reproductivo: 'Vacía',
+            estado_salud: 'sano',
+            
+            // 👇 SAAS FIX: Mandamos la finca de las dos formas para que TypeORM la atrape sí o sí
+            finca: { id: fincaId },
+            finca_id: fincaId, 
+            
             madre: { animal_id: diag.monta.hembra.animal_id },
             padre: diag.monta.macho ? { animal_id: diag.monta.macho.animal_id } : null,
-        } as any); 
+        }; 
 
-        await this.animalesRepo.save(nuevaCria);
+        // Guardamos directamente saltándonos el .create() para que TypeScript no moleste
+        await this.animalesRepo.save(nuevaCria as any);
     }
 
     try {
