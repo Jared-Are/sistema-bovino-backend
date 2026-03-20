@@ -234,28 +234,26 @@ export class ReproduccionService {
       estado: datos.tipo_parto === 'Aborto' ? 'Aborto' : 'Parto Exitoso',
     });
 
-    // 🌟 AUTOMATIZACIÓN 2: CREAR EL NUEVO TERNERITO DE FORMA SEGURA
+   // 🌟 AUTOMATIZACIÓN 2: CREAR EL NUEVO TERNERITO (SAAS FIX)
     if (datos.tipo_parto !== 'Aborto') {
-      const nuevaCria = {
-        finca_id: fincaId,
-        finca: { id: fincaId },
-        arete: `CRIA-${Date.now().toString().slice(-4)}`,
-        // 👇 1. Recibimos el nombre que escribiste en la pantalla
-        nombre: datos.nombre_animal || `Cría de ${diag.monta.hembra.arete}`,
-        // 👇 2. Recibimos el sexo (Macho/Hembra) que seleccionaste
-        sexo: (datos.sexo || 'Hembra') as any,
-        peso_nacimiento: 35,
-        peso_actual: 35,
-        fecha_nacimiento: this.getHoy(),
-        estado_reproductivo: 'Vacía',
-        madre: { animal_id: diag.monta.hembra.animal_id },
-        // 👇 3. ¡LA MAGIA! El sistema busca la monta original y le asigna el padre automáticamente
-        padre: diag.monta.macho
-          ? { animal_id: diag.monta.macho.animal_id }
-          : null,
-      } as any;
+        
+        // Usamos .create() en lugar de un objeto crudo para que TypeORM aplique la finca correctamente
+        const nuevaCria = this.animalesRepo.create({
+            arete: `CRIA-${Date.now().toString().slice(-4)}`,
+            nombre: datos.nombre_animal || `Cría de ${diag.monta.hembra.arete}`,
+            sexo: (datos.sexo || 'Hembra') as any,
+            peso_nacimiento: 35, 
+            peso_actual: 35,
+            fecha_nacimiento: this.getHoy(),
+            estado_reproductivo: 'Vacía' as any,
+            // 👇 SAAS FIX: Le mandamos la finca de las dos formas posibles para asegurar que Sherly lo agarre
+            fincaId: fincaId, 
+            finca: { id: fincaId }, 
+            madre: { animal_id: diag.monta.hembra.animal_id },
+            padre: diag.monta.macho ? { animal_id: diag.monta.macho.animal_id } : null,
+        } as any); 
 
-      await this.animalesRepo.save(nuevaCria);
+        await this.animalesRepo.save(nuevaCria);
     }
 
     try {
