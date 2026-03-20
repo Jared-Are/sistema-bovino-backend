@@ -11,8 +11,8 @@ export class CrearUsuarioDto {
   @IsNotEmpty({ message: 'El nombre es obligatorio' })
   nombre: string;
 
-  @IsEnum(RolUsuario, { message: 'El rol debe ser PROPIETARIO, VETERINARIO u OPERARIO' })
-  @IsNotEmpty({ message: 'El rol es obligatorio' })
+  @IsEnum(RolUsuario)
+  @IsNotEmpty()
   rol: RolUsuario;
 
   @IsOptional()

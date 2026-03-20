@@ -5,6 +5,7 @@ import { Usuario } from './entities/usuario.entity';
 import * as bcrypt from 'bcrypt';
 import { CrearUsuarioDto } from './dto/crear-usuario.dto';
 import { ActualizarUsuarioDto } from './dto/actualizar-usuario.dto';
+import { RolUsuario, EstadoUsuario } from '../../common/enums';  // ← NUEVA LÍNEA
 
 @Injectable()
 export class UsuariosService {
@@ -21,25 +22,25 @@ export class UsuariosService {
       .getOne();
   }
 
+// En crearUsuario() - AGREGAR al inicio:
   async crearUsuario(datos: CrearUsuarioDto, fincaId: number): Promise<Usuario> {
-    const existe = await this.usuarioRepository.findOne({ where: { telefono: datos.telefono } });
-    if (existe) {
-      throw new BadRequestException('El teléfono ya está registrado en el sistema.');
-    }
-
-    const contrasenaPlana = datos.contrasena || 'Finca1234';
-    const salt = await bcrypt.genSalt(10);
-    const contrasenaEncriptada = await bcrypt.hash(contrasenaPlana, salt);
-
-    const nuevoUsuario = this.usuarioRepository.create({
-      ...datos,
-      contrasena: contrasenaEncriptada,
-      finca: { finca_id: fincaId },
-      debe_cambiar_contrasena: true
+  if (datos.rol === RolUsuario.PROPIETARIO) {
+    const propietarioExistente = await this.usuarioRepository.findOne({
+      where: { finca: { finca_id: fincaId }, rol: RolUsuario.PROPIETARIO }
     });
-
-    return this.usuarioRepository.save(nuevoUsuario);
+    if (propietarioExistente) {
+      throw new BadRequestException('Ya existe un propietario en esta finca');
+    }
   }
+
+  const nuevoUsuario = this.usuarioRepository.create({
+    ...datos,
+    finca: { finca_id: fincaId },
+    debe_cambiar_contrasena: true
+  });
+
+  return this.usuarioRepository.save(nuevoUsuario);
+}
 
   // Lista COMPLETA con finca
   async obtenerUsuariosDeFinca(fincaId: number) {
@@ -55,19 +56,21 @@ export class UsuariosService {
 
   // usuario por ID
   async obtenerUsuarioPorId(usuarioId: string, fincaId: number) {
-    const usuario = await this.usuarioRepository.findOne({
-      where: { 
-        usuario_id: usuarioId,
-        finca: { finca_id: fincaId }
-      },
-      relations: ['finca']
-    });
+  const usuario = await this.usuarioRepository.findOne({
+    where: { 
+      usuario_id: usuarioId,
+      finca: { finca_id: fincaId }
+    },
+    relations: ['finca']
+  });
 
-    if (!usuario) {
-      throw new NotFoundException('Usuario no encontrado');
-    }
+  if (!usuario) {
+    throw new NotFoundException('Usuario no encontrado');
+  }
 
-    return usuario;
+  usuario.finca = usuario.finca.nombre || 'Sin finca';
+  
+  return usuario;
   }
 
   // Actualizar usuario
@@ -116,5 +119,31 @@ export class UsuariosService {
     
     await this.usuarioRepository.save(usuario);
     return true;
+  }
+
+  async buscarPorTelefono(telefono: string) {
+    return this.usuarioRepository.findOne({
+      where: { telefono },
+      relations: ['finca']
+    });
+  }
+
+  async crearUsuarioPublico(datos: {
+    nombre: string;
+    telefono: string;
+    contrasena: string;
+    rol: string;
+    fincaId: number;
+  }) {
+    const nuevoUsuario = new Usuario();
+    nuevoUsuario.nombre = datos.nombre;
+    nuevoUsuario.telefono = datos.telefono;
+    nuevoUsuario.contrasena = datos.contrasena;
+    nuevoUsuario.rol = datos.rol as RolUsuario;
+    nuevoUsuario.finca = { finca_id: datos.fincaId } as any;
+    nuevoUsuario.estado = EstadoUsuario.ACTIVO;
+    nuevoUsuario.debe_cambiar_contrasena = false;
+
+    return this.usuarioRepository.save(nuevoUsuario);
   }
 }
