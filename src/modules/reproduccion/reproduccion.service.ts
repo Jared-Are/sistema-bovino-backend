@@ -210,7 +210,7 @@ export class ReproduccionService {
   // SECCIÓN DE PARTOS
   // =====================================
 
- async registrarParto(datos: RegistrarPartoDto, fincaId: number) {
+async registrarParto(datos: RegistrarPartoDto, fincaId: number) {
     if (!fincaId) throw new Error("ID de finca no proporcionado");
 
     const diag = await this.diagnosticosRepo.findOne({
@@ -220,44 +220,42 @@ export class ReproduccionService {
 
     if (!diag) throw new Error('Diagnóstico no encontrado');
 
-    // 1. GUARDAR EL PARTO CON SU FINCA (CORRIGE EL ERROR 500)
-    const dataParto: any = {
-      ...datos,
-      diagnostico: { id: diag.id },
-      finca_id: Number(fincaId), // 👈 ESTO ES LO QUE FALTABA
-      finca: { id: Number(fincaId) },
-      fecha_parto: new Date(),
-    };
-    
-    // Usamos el repository de forma segura
-    const nuevoParto = await this.partosRepo.save(this.partosRepo.create(dataParto));
+    // 1. INSERTAR EL PARTO (MODO DIOS - QUERY BUILDER)
+    // Usamos los nombres reales de las columnas en la DB
+    const insertParto = await this.partosRepo.createQueryBuilder()
+        .insert()
+        .into('partos') 
+        .values({
+            numero_parto: datos.numero_parto,
+            tipo_parto: datos.tipo_parto,
+            finca_id: Number(fincaId), // Inyección directa
+            diagnostico_prenez_id: diag.id,
+            fecha_parto: new Date(),
+            fecha_creacion: new Date()
+        })
+        .returning('*') // Pedimos que nos devuelva el registro creado
+        .execute();
 
-    // 2. CREAR LA CRÍA (USANDO EL MISMO ID DE FINCA)
+    const nuevoParto = insertParto.generatedMaps[0];
+
+    // 2. CREAR LA CRÍA (QUERY BUILDER)
     if (datos.tipo_parto !== 'Aborto') {
-        const nuevaCria = {
-            arete: `CRIA-${Date.now().toString().slice(-4)}`,
-            nombre: datos.nombre_animal || `Cría de ${diag.monta.hembra.arete}`,
-            sexo: datos.sexo || 'Hembra',
-            peso_nacimiento: 35,
-            peso_actual: 35,
-            fecha_nacimiento: new Date(),
-            estado_reproductivo: 'Vacía',
-            estado_salud: 'sano',
-            
-            // Inyectamos la finca de todas las formas posibles
-            finca_id: Number(fincaId),
-            fincaId: Number(fincaId),
-            finca: { id: Number(fincaId) },
-            
-            animal_madre_id: diag.monta.hembra.animal_id,
-            animal_padre_id: diag.monta.macho ? diag.monta.macho.animal_id : null,
-        };
-
-        // Guardado directo a la tabla de animales
         await this.animalesRepo.createQueryBuilder()
             .insert()
             .into('animales')
-            .values(nuevaCria)
+            .values({
+                arete: `CRIA-${Date.now().toString().slice(-4)}`,
+                nombre: datos.nombre_animal || `Cría de ${diag.monta.hembra.arete}`,
+                sexo: datos.sexo || 'Hembra',
+                peso_nacimiento: 35,
+                peso_actual: 35,
+                fecha_nacimiento: new Date(),
+                estado_reproductivo: 'Vacía',
+                estado_salud: 'sano',
+                finca_id: Number(fincaId),
+                animal_madre_id: diag.monta.hembra.animal_id,
+                animal_padre_id: diag.monta.macho ? diag.monta.macho.animal_id : null,
+            })
             .execute();
     }
 
