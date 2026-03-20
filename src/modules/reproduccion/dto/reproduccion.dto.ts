@@ -63,4 +63,12 @@ export class RegistrarPartoDto {
   @IsString()
   @IsNotEmpty()
   tipo_parto: string;
+
+  @IsString()
+  @IsOptional()
+  nombre_animal?: string;
+
+  @IsString()
+  @IsOptional()
+  sexo?: string;
 }

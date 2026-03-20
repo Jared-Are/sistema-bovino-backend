@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, UseGuards, Param, Patch } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards, Param, Patch,Delete } from '@nestjs/common';
 import { ReproduccionService } from './reproduccion.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UsuarioActual } from '../../common/decorators/usuario.decorator';
@@ -37,6 +37,11 @@ export class ReproduccionController {
     return this.reproduccionService.update(+id, updateData);
   }
 
+  @Delete('montas/:id')
+  remove(@Param('id') id: string) {
+    return this.reproduccionService.remove(+id);
+  }
+
   @Post('diagnosticos')
   @Roles(RolUsuario.PROPIETARIO, RolUsuario.VETERINARIO, RolUsuario.OPERARIO)
   registrarDiagnostico(
@@ -67,3 +72,4 @@ export class ReproduccionController {
     return this.reproduccionService.obtenerPartos(usuario.fincaId);
   }
 }
+

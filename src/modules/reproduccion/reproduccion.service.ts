@@ -137,6 +137,19 @@ export class ReproduccionService {
 
     return await this.montasRepo.save(monta);
   }
+
+
+  // 👇 Función para eliminar una monta (y todo lo que dependa de ella)
+  async remove(id: number) {
+    const monta = await this.findOne(id);
+    
+    // Si la vaca estaba "En Evaluación" o "Confirmada", la regresamos a "Vacía"
+    if (monta.hembra && (monta.estado === 'En Evaluación' || monta.estado === 'Confirmada')) {
+        await this.animalesRepo.update(monta.hembra.animal_id, { estado_reproductivo: 'Vacía' } as any);
+    }
+
+    return await this.montasRepo.remove(monta);
+  }
   // =====================================
   // SECCIÓN DE DIAGNÓSTICOS
   // =====================================
