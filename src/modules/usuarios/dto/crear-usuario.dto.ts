@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsEnum, IsOptional, MinLength, Matches } from 'class-validator';
+import { IsEmail,IsString, IsNotEmpty, IsEnum, IsOptional, MinLength, Matches } from 'class-validator';
 import { RolUsuario } from '../../../common/enums';
 
 export class CrearUsuarioDto {
@@ -10,6 +10,10 @@ export class CrearUsuarioDto {
   @IsString({ message: 'El nombre debe ser texto' })
   @IsNotEmpty({ message: 'El nombre es obligatorio' })
   nombre: string;
+
+  @IsEmail()
+  @IsOptional()
+  email?: string;
 
   @IsEnum(RolUsuario)
   @IsNotEmpty()

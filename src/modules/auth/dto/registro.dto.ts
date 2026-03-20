@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsNumber, MinLength } from 'class-validator';
+import { IsString, IsNotEmpty, IsNumber, MinLength, IsEmail, IsOptional } from 'class-validator';
 
 export class RegistroDto {
   @IsString()
@@ -8,6 +8,10 @@ export class RegistroDto {
   @IsString()
   @IsNotEmpty({ message: 'El teléfono es obligatorio' })
   telefono: string;
+
+  @IsEmail()
+  @IsOptional()
+  email?: string;
 
   @IsString()
   @IsNotEmpty({ message: 'La contraseña es obligatoria' })

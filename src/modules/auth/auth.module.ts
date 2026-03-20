@@ -7,11 +7,12 @@ import { AuthController } from './Auth.controller'; // <-- Corregido a minúscul
 import { UsuariosModule } from '../usuarios/usuarios.module';
 import { JwtStrategy } from './jwt.estrategy'; // <-- Importación correcta de la estrategia
 import { FincasModule } from '../fincas/fincas.module'; // <-- Importamos el módulo de fincas
-
+import { EmailModule } from '../email/email.module'; // <-- Importamos el módulo de email
 @Module({
   imports: [
     UsuariosModule, // Necesitamos buscar usuarios
     FincasModule, // Necesitamos acceder a las fincas
+    EmailModule, // <-- Agregamos el módulo de email
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
