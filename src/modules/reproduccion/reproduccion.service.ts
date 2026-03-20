@@ -210,7 +210,7 @@ export class ReproduccionService {
   // SECCIÓN DE PARTOS
   // =====================================
 
-  async registrarParto(datos: RegistrarPartoDto, fincaId: number) {
+ async registrarParto(datos: RegistrarPartoDto, fincaId: number) {
     if (!fincaId) throw new Error("ID de finca no proporcionado");
 
     const diag = await this.diagnosticosRepo.findOne({
@@ -220,17 +220,19 @@ export class ReproduccionService {
 
     if (!diag) throw new Error('Diagnóstico no encontrado');
 
-    // 1. Guardar el Parto (Usando nombres genéricos para evitar el error de TS)
+    // 1. GUARDAR EL PARTO CON SU FINCA (CORRIGE EL ERROR 500)
     const dataParto: any = {
       ...datos,
       diagnostico: { id: diag.id },
+      finca_id: Number(fincaId), // 👈 ESTO ES LO QUE FALTABA
+      finca: { id: Number(fincaId) },
       fecha_parto: new Date(),
-      fecha: new Date(),
     };
     
+    // Usamos el repository de forma segura
     const nuevoParto = await this.partosRepo.save(this.partosRepo.create(dataParto));
 
-    // 2. Crear la Cría (Aquí es donde suele fallar la Finca)
+    // 2. CREAR LA CRÍA (USANDO EL MISMO ID DE FINCA)
     if (datos.tipo_parto !== 'Aborto') {
         const nuevaCria = {
             arete: `CRIA-${Date.now().toString().slice(-4)}`,
@@ -242,33 +244,35 @@ export class ReproduccionService {
             estado_reproductivo: 'Vacía',
             estado_salud: 'sano',
             
-            // 👇 ESTO ES LO VITAL: Mandamos ambos estilos de nombre
+            // Inyectamos la finca de todas las formas posibles
             finca_id: Number(fincaId),
             fincaId: Number(fincaId),
             finca: { id: Number(fincaId) },
             
-            // Relaciones parentales
             animal_madre_id: diag.monta.hembra.animal_id,
             animal_padre_id: diag.monta.macho ? diag.monta.macho.animal_id : null,
         };
 
-        // Intentamos guardar la cría. Si falla el QueryBuilder, usamos el Repo normal
-        try {
-            await this.animalesRepo.createQueryBuilder()
-                .insert()
-                .into('animales')
-                .values(nuevaCria)
-                .execute();
-        } catch (e) {
-            console.log("Falló QueryBuilder, reintentando con Repository...");
-            await this.animalesRepo.save(this.animalesRepo.create(nuevaCria as any));
-        }
+        // Guardado directo a la tabla de animales
+        await this.animalesRepo.createQueryBuilder()
+            .insert()
+            .into('animales')
+            .values(nuevaCria)
+            .execute();
     }
+
+    // 3. ACTUALIZAR ESTADOS
+    await this.animalesRepo.update(diag.monta.hembra.animal_id, {
+      estado_reproductivo: datos.tipo_parto === 'Aborto' ? 'Vacía' : 'Lactando'
+    } as any);
+
+    await this.montasRepo.update(diag.monta.id, {
+      estado: datos.tipo_parto === 'Aborto' ? 'Aborto' : 'Parto Exitoso'
+    });
 
     return nuevoParto;
   }
 
-  
   async obtenerPartos(fincaId: number) {
     return this.partosRepo.find({
       where: { fincaId },
