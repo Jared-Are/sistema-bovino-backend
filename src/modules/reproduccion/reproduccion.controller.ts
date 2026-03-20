@@ -57,13 +57,17 @@ export class ReproduccionController {
     return this.reproduccionService.obtenerDiagnosticos(usuario.fincaId);
   }
 
-  @Post('partos')
+ @Post('partos')
   @Roles(RolUsuario.PROPIETARIO, RolUsuario.VETERINARIO, RolUsuario.OPERARIO)
   registrarParto(
     @Body() body: RegistrarPartoDto,
     @UsuarioActual() usuario: any,
   ) {
-    return this.reproduccionService.registrarParto(body, usuario.fincaId, usuario.userId);
+    // Extraemos la finca del token asegurando que no esté vacía
+    const idFincaReal = usuario.fincaId || usuario.finca_id;
+    
+    // Le mandamos SOLO 2 datos al servicio para que no se crucen los cables
+    return this.reproduccionService.registrarParto(body, idFincaReal);
   }
 
   @Get('partos')

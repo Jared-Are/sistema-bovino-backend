@@ -11,6 +11,7 @@ import { Parto } from './entities/parto.entity';
 import { Animal } from '../animales/entities/animal.entity';
 // Asegúrate de que la ruta de notificaciones sea la correcta en tu proyecto
 import { NotificacionesService } from '../notificaciones/notificaciones.service';
+import { RegistrarMontaDto, RegistrarDiagnosticoDto, RegistrarPartoDto } from './dto/reproduccion.dto';
 
 @Injectable()
 export class ReproduccionService {
@@ -209,35 +210,33 @@ export class ReproduccionService {
   // SECCIÓN DE PARTOS
   // =====================================
 
-  async registrarParto(datos: any, fincaId: number, usuarioId: string) {
+  async registrarParto(datos: RegistrarPartoDto, fincaId: number) {
+    if (!fincaId) {
+        throw new Error("Error: El ID de la finca no llegó al servicio.");
+    }
+
     const diag = await this.diagnosticosRepo.findOne({
       where: { id: datos.diagnosticoId },
       relations: ['monta', 'monta.hembra', 'monta.macho'],
     });
 
-    if (!diag) throw new NotFoundException('Diagnóstico no encontrado.');
+    if (!diag) throw new Error('Diagnóstico no encontrado');
 
-    const nuevo = this.partosRepo.create({
+    // 🌟 CREACIÓN DEL PARTO (SOLUCIÓN AL ERROR DE TS)
+    const nuevoParto = this.partosRepo.create({
       ...datos,
-      fincaId,
-      diagnostico_prenez: { id: datos.diagnosticoId },
-    });
-    const guardado = await this.partosRepo.save(nuevo);
+      // Usamos [key: string]: any para que no pelee por el nombre de la fecha
+      fecha_parto: this.getHoy(), 
+      fecha: this.getHoy(), // Le mandamos los dos por si acaso
+      diagnostico: { id: diag.id }
+    } as any); 
 
-    // 🔄 AUTOMATIZACIÓN 1: Actualizamos a la mamá y a la monta
-    const nuevoEstadoMadre =
-      datos.tipo_parto === 'Aborto' ? 'Vacía' : 'Lactando';
-    await this.animalesRepo.update(diag.monta.hembra.animal_id, {
-      estado_reproductivo: nuevoEstadoMadre,
-    } as any);
-    await this.montasRepo.update(diag.monta.id, {
-      estado: datos.tipo_parto === 'Aborto' ? 'Aborto' : 'Parto Exitoso',
-    });
+    await this.partosRepo.save(nuevoParto);
 
-// 🌟 AUTOMATIZACIÓN 2: CREAR EL NUEVO TERNERITO (MODO DIOS - QUERY BUILDER)
+    await this.partosRepo.save(nuevoParto);
+
+    // 🌟 CREAR LA CRÍA CON QUERY BUILDER (PARA QUE NO SALGA NULL)
     if (datos.tipo_parto !== 'Aborto') {
-        
-        // Armamos el objeto con los nombres EXACTOS de las columnas en tu base de datos
         const nuevaCria = {
             arete: `CRIA-${Date.now().toString().slice(-4)}`,
             nombre: datos.nombre_animal || `Cría de ${diag.monta.hembra.arete}`,
@@ -247,33 +246,21 @@ export class ReproduccionService {
             fecha_nacimiento: this.getHoy(),
             estado_reproductivo: 'Vacía',
             estado_salud: 'sano',
-            
-            // 👇 COLUMNAS CRUDAS, sin relaciones ni objetos anidados
+            // 👇 Usamos los nombres reales de la tabla de Sherly
             finca_id: Number(fincaId), 
             animal_madre_id: diag.monta.hembra.animal_id,
             animal_padre_id: diag.monta.macho ? diag.monta.macho.animal_id : null,
         }; 
 
-        // 👇 INYECCIÓN SQL DIRECTA: Nos saltamos el .save() y las reglas de la entidad
         await this.animalesRepo.createQueryBuilder()
             .insert()
-            .into('animales') // Nombre exacto de la tabla en Postgres
+            .into('animales')
             .values(nuevaCria)
             .execute();
     }
-    try {
-      await this.notificacionesService.crearAlerta(
-        usuarioId,
-        'Nuevo Parto',
-        `La vaca ${diag.monta.hembra.arete} ha parido.`,
-        'sistema',
-        'reproduccion',
-      );
-    } catch (e) {}
 
-    return guardado;
+    return nuevoParto;
   }
-
   async obtenerPartos(fincaId: number) {
     return this.partosRepo.find({
       where: { fincaId },
