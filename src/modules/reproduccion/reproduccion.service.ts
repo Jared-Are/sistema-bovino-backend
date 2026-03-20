@@ -265,6 +265,7 @@ export class ReproduccionService {
             
             madre: { animal_id: diag.monta.hembra.animal_id },
             padre: diag.monta.macho ? { animal_id: diag.monta.macho.animal_id } : null,
+            
         }; 
 
         // Guardamos forzando a TypeORM a aceptar el objeto tal cual
