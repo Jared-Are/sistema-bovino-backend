@@ -234,32 +234,42 @@ export class ReproduccionService {
       estado: datos.tipo_parto === 'Aborto' ? 'Aborto' : 'Parto Exitoso',
     });
 
-   // 🌟 AUTOMATIZACIÓN 2: CREAR EL NUEVO TERNERITO (SAAS FIX)
+  // 🌟 AUTOMATIZACIÓN 2: CREAR EL NUEVO TERNERITO (OPCIÓN NUCLEAR SAAS)
     if (datos.tipo_parto !== 'Aborto') {
         
-        // Armamos el objeto crudo exactamente con lo que necesita la base de datos
+        // Convertimos fincaId a Número por si acaso el controlador lo manda como texto
+        const idFincaSeguro = Number(fincaId);
+
         const nuevaCria = {
             arete: `CRIA-${Date.now().toString().slice(-4)}`,
             nombre: datos.nombre_animal || `Cría de ${diag.monta.hembra.arete}`,
             sexo: datos.sexo || 'Hembra',
-            peso_nacimiento: 35, 
-            peso_actual: 35,
-            fecha_nacimiento: this.getHoy(),
-            estado_reproductivo: 'Vacía',
-            estado_salud: 'sano',
             
-            // 👇 SAAS FIX: Mandamos la finca de las dos formas para que TypeORM la atrape sí o sí
-            finca: { id: fincaId },
-            finca_id: fincaId, 
+            // Le mandamos las variables en los dos formatos (camelCase y snake_case) 
+            // por si Sherly usa uno u otro en su entidad Animal.
+            peso_nacimiento: 35, 
+            pesoNacimiento: 35,
+            peso_actual: 35,
+            ultimoPeso: 35,
+            fecha_nacimiento: this.getHoy(),
+            fechaNacimiento: this.getHoy(),
+            estado_reproductivo: 'Vacía',
+            estadoReproductivo: 'Vacía',
+            estado_salud: 'sano',
+            estadoSalud: 'sano',
+            
+            // 👇 LA BOMBA NUCLEAR PARA LA FINCA: Alguna de estas 3 tiene que funcionar sí o sí
+            finca: { id: idFincaSeguro }, // Si Sherly lo tiene como relación
+            finca_id: idFincaSeguro,      // Si Sherly lo tiene como columna cruda en snake_case
+            fincaId: idFincaSeguro,       // Si Sherly lo tiene como columna cruda en camelCase
             
             madre: { animal_id: diag.monta.hembra.animal_id },
             padre: diag.monta.macho ? { animal_id: diag.monta.macho.animal_id } : null,
         }; 
 
-        // Guardamos directamente saltándonos el .create() para que TypeScript no moleste
+        // Guardamos forzando a TypeORM a aceptar el objeto tal cual
         await this.animalesRepo.save(nuevaCria as any);
     }
-
     try {
       await this.notificacionesService.crearAlerta(
         usuarioId,
