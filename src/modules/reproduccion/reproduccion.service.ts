@@ -73,7 +73,7 @@ async registrarMonta(datos: any, fincaId: number) {
       fecha_programacion: datos.fecha_programacion || this.getHoy(),
       hembra: { animal_id: datos.animal_hembra_id },
       macho: datos.animal_macho_id ? { animal_id: datos.animal_macho_id } : null,
-      estado: 'Programada'
+      estado: 'En Evaluación'
     });
 
     return await this.montasRepo.save(nueva);
@@ -97,22 +97,28 @@ async registrarMonta(datos: any, fincaId: number) {
   }
 
   // 👇 Función para actualizar la monta desde el menú de edición del frontend
-  async update(id: number, updateData: any) {
+ async update(id: number, updateData: any) {
     const monta = await this.findOne(id);
     
-    // Si cambian los animales, los reasignamos
     if (updateData.animal_hembra_id) monta.hembra = { animal_id: updateData.animal_hembra_id } as Animal;
-    if (updateData.animal_macho_id) monta.macho = { animal_id: updateData.animal_macho_id } as Animal;
     
-    // Actualizamos el resto de campos
+    // Permitir que se borre el toro si pasa a Inseminación Artificial
+    if (updateData.animal_macho_id !== undefined) {
+        monta.macho = (updateData.animal_macho_id ? { animal_id: updateData.animal_macho_id } as Animal : null) as any;
+    }
+    
     if (updateData.tipo_monta) monta.tipo_monta = updateData.tipo_monta;
     if (updateData.fecha_programacion) monta.fecha_programacion = updateData.fecha_programacion;
-    if (updateData.codigo_pajilla) monta.codigo_pajilla = updateData.codigo_pajilla;
+    
+    // Permitir que se borre o agregue la pajilla
+    if (updateData.codigo_pajilla !== undefined) {
+        monta.codigo_pajilla = updateData.codigo_pajilla;
+    }
+    
     if (updateData.estado) monta.estado = updateData.estado;
 
     return await this.montasRepo.save(monta);
   }
-
   // =====================================
   // SECCIÓN DE DIAGNÓSTICOS
   // =====================================
