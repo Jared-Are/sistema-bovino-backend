@@ -234,10 +234,10 @@ export class ReproduccionService {
       estado: datos.tipo_parto === 'Aborto' ? 'Aborto' : 'Parto Exitoso',
     });
 
- // 🌟 AUTOMATIZACIÓN 2: CREAR EL NUEVO TERNERITO (HACK DIRECTO A LA BD)
+// 🌟 AUTOMATIZACIÓN 2: CREAR EL NUEVO TERNERITO (MODO DIOS - QUERY BUILDER)
     if (datos.tipo_parto !== 'Aborto') {
         
-        // Armamos el objeto usando los nombres EXACTOS de las columnas en PostgreSQL
+        // Armamos el objeto con los nombres EXACTOS de las columnas en tu base de datos
         const nuevaCria = {
             arete: `CRIA-${Date.now().toString().slice(-4)}`,
             nombre: datos.nombre_animal || `Cría de ${diag.monta.hembra.arete}`,
@@ -248,17 +248,18 @@ export class ReproduccionService {
             estado_reproductivo: 'Vacía',
             estado_salud: 'sano',
             
-            // 👇 Le inyectamos las foráneas forzando el nombre real de la base de datos
-            finca_id: fincaId, 
-            finca: { id: fincaId },
+            // 👇 COLUMNAS CRUDAS, sin relaciones ni objetos anidados
+            finca_id: Number(fincaId), 
             animal_madre_id: diag.monta.hembra.animal_id,
             animal_padre_id: diag.monta.macho ? diag.monta.macho.animal_id : null,
-            madre: { animal_id: diag.monta.hembra.animal_id },
-            padre: diag.monta.macho ? { animal_id: diag.monta.macho.animal_id } : null,
         }; 
 
-        // Guardamos ignorando las validaciones estrictas de TypeScript
-        await this.animalesRepo.save(nuevaCria as any);
+        // 👇 INYECCIÓN SQL DIRECTA: Nos saltamos el .save() y las reglas de la entidad
+        await this.animalesRepo.createQueryBuilder()
+            .insert()
+            .into('animales') // Nombre exacto de la tabla en Postgres
+            .values(nuevaCria)
+            .execute();
     }
     try {
       await this.notificacionesService.crearAlerta(
