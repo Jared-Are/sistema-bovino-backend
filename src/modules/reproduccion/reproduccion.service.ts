@@ -9,7 +9,6 @@ import { Monta } from './entities/monta.entity';
 import { DiagnosticoPrenez } from './entities/diagnostico-prenez.entity';
 import { Parto } from './entities/parto.entity';
 import { Animal } from '../animales/entities/animal.entity';
-// Asegúrate de que la ruta de notificaciones sea la correcta en tu proyecto
 import { NotificacionesService } from '../notificaciones/notificaciones.service';
 import { RegistrarMontaDto, RegistrarDiagnosticoDto, RegistrarPartoDto } from './dto/reproduccion.dto';
 
@@ -28,7 +27,6 @@ export class ReproduccionService {
     @InjectRepository(Animal)
     private readonly animalesRepo: Repository<Animal>,
 
-    // Si tu NotificacionesService falla por importación, coméntalo temporalmente
     private readonly notificacionesService: NotificacionesService,
   ) {}
 
@@ -41,23 +39,15 @@ export class ReproduccionService {
   // =====================================
 
   async registrarMonta(datos: any, fincaId: number) {
-    // Usamos los nombres exactos que vienen del frontend ahora
     if (!datos.numero_monta || !datos.animal_hembra_id) {
-      throw new BadRequestException(
-        'El número de monta y el ID de la hembra son obligatorios.',
-      );
+      throw new BadRequestException('El número de monta y el ID de la hembra son obligatorios.');
     }
 
-    const hembra = await this.animalesRepo.findOneBy({
-      animal_id: datos.animal_hembra_id,
-    });
+    const hembra = await this.animalesRepo.findOneBy({ animal_id: datos.animal_hembra_id });
     if (!hembra || hembra.sexo !== 'Hembra') {
-      throw new BadRequestException(
-        'La monta solo puede registrarse en animales de sexo Hembra.',
-      );
+      throw new BadRequestException('La monta solo puede registrarse en animales de sexo Hembra.');
     }
 
-    // Bloquear si ya tiene un embarazo activo sin parto
     const prenecesActivas = await this.diagnosticosRepo.find({
       where: {
         fincaId,
@@ -72,9 +62,7 @@ export class ReproduccionService {
         where: { diagnostico_prenez: { id: prenez.id } },
       });
       if (!tieneParto) {
-        throw new BadRequestException(
-          `La vaca ${hembra.nombre || hembra.arete} ya tiene una preñez activa. Registra el parto primero.`,
-        );
+        throw new BadRequestException(`La vaca ${hembra.nombre || hembra.arete} ya tiene una preñez activa. Registra el parto primero.`);
       }
     }
 
@@ -83,14 +71,13 @@ export class ReproduccionService {
       fincaId,
       fecha_programacion: datos.fecha_programacion || this.getHoy(),
       hembra: { animal_id: datos.animal_hembra_id },
-      macho: datos.animal_macho_id
-        ? { animal_id: datos.animal_macho_id }
-        : null,
+      macho: datos.animal_macho_id ? { animal_id: datos.animal_macho_id } : null,
       estado: 'En Evaluación',
     });
 
     return await this.montasRepo.save(nueva);
   }
+
   async obtenerMontas(fincaId: number) {
     return this.montasRepo.find({
       where: { fincaId },
@@ -99,7 +86,6 @@ export class ReproduccionService {
     });
   }
 
-  // 👇 Esta es la función que te faltaba sacar al nivel principal
   async findOne(id: number) {
     const monta = await this.montasRepo.findOne({
       where: { id },
@@ -109,48 +95,29 @@ export class ReproduccionService {
     return monta;
   }
 
-  // 👇 Función para actualizar la monta desde el menú de edición del frontend
   async update(id: number, updateData: any) {
     const monta = await this.findOne(id);
 
-    if (updateData.animal_hembra_id)
-      monta.hembra = { animal_id: updateData.animal_hembra_id } as Animal;
-
-    // Permitir que se borre el toro si pasa a Inseminación Artificial
+    if (updateData.animal_hembra_id) monta.hembra = { animal_id: updateData.animal_hembra_id } as Animal;
     if (updateData.animal_macho_id !== undefined) {
-      monta.macho = (
-        updateData.animal_macho_id
-          ? ({ animal_id: updateData.animal_macho_id } as Animal)
-          : null
-      ) as any;
+      monta.macho = (updateData.animal_macho_id ? { animal_id: updateData.animal_macho_id } as Animal : null) as any;
     }
-
     if (updateData.tipo_monta) monta.tipo_monta = updateData.tipo_monta;
-    if (updateData.fecha_programacion)
-      monta.fecha_programacion = updateData.fecha_programacion;
-
-    // Permitir que se borre o agregue la pajilla
-    if (updateData.codigo_pajilla !== undefined) {
-      monta.codigo_pajilla = updateData.codigo_pajilla;
-    }
-
+    if (updateData.fecha_programacion) monta.fecha_programacion = updateData.fecha_programacion;
+    if (updateData.codigo_pajilla !== undefined) monta.codigo_pajilla = updateData.codigo_pajilla;
     if (updateData.estado) monta.estado = updateData.estado;
 
     return await this.montasRepo.save(monta);
   }
 
-
-  // 👇 Función para eliminar una monta (y todo lo que dependa de ella)
   async remove(id: number) {
     const monta = await this.findOne(id);
-    
-    // Si la vaca estaba "En Evaluación" o "Confirmada", la regresamos a "Vacía"
     if (monta.hembra && (monta.estado === 'En Evaluación' || monta.estado === 'Confirmada')) {
         await this.animalesRepo.update(monta.hembra.animal_id, { estado_reproductivo: 'Vacía' } as any);
     }
-
     return await this.montasRepo.remove(monta);
   }
+
   // =====================================
   // SECCIÓN DE DIAGNÓSTICOS
   // =====================================
@@ -165,22 +132,18 @@ export class ReproduccionService {
 
     const nuevo = this.diagnosticosRepo.create({
       ...datos,
+      numero_prenez: `PRE-${Date.now().toString().slice(-4)}`, // ARREGLO DEL DIAGNOSTICO
       fincaId,
       fecha_programacion: datos.fecha_programacion || this.getHoy(),
       monta: { id: datos.montaId },
     });
+    
     const guardado = await this.diagnosticosRepo.save(nuevo);
-
-    // 🔄 AUTOMATIZACIÓN DE ESTADOS
+    
     const estadoVaca = datos.resultado === 'Positivo' ? 'Gestante' : 'Vacía';
-    const estadoMonta =
-      datos.resultado === 'Positivo' ? 'Confirmada' : 'Fallida';
+    const estadoMonta = datos.resultado === 'Positivo' ? 'Confirmada' : 'Fallida';
 
-    // 1. Actualizamos a la Vaca
-    await this.animalesRepo.update(monta.hembra.animal_id, {
-      estado_reproductivo: estadoVaca,
-    } as any);
-    // 2. Actualizamos la Monta
+    await this.animalesRepo.update(monta.hembra.animal_id, { estado_reproductivo: estadoVaca } as any);
     await this.montasRepo.update(monta.id, { estado: estadoMonta });
 
     try {
@@ -191,9 +154,7 @@ export class ReproduccionService {
         'alerta',
         'reproduccion',
       );
-    } catch (e) {
-      /* Ignorar si falla la notificación */
-    }
+    } catch (e) {}
 
     return guardado;
   }
@@ -211,9 +172,7 @@ export class ReproduccionService {
   // =====================================
 
   async registrarParto(datos: RegistrarPartoDto, fincaId: number) {
-    if (!fincaId) {
-        throw new Error("Error: El ID de la finca no llegó al servicio.");
-    }
+    if (!fincaId) throw new Error("ID de finca no proporcionado");
 
     const diag = await this.diagnosticosRepo.findOne({
       where: { id: datos.diagnosticoId },
@@ -222,45 +181,49 @@ export class ReproduccionService {
 
     if (!diag) throw new Error('Diagnóstico no encontrado');
 
-    // 🌟 CREACIÓN DEL PARTO (SOLUCIÓN AL ERROR DE TS)
-    const nuevoParto = this.partosRepo.create({
-      ...datos,
-      // Usamos [key: string]: any para que no pelee por el nombre de la fecha
-      fecha_parto: this.getHoy(), 
-      fecha: this.getHoy(), // Le mandamos los dos por si acaso
-      diagnostico: { id: diag.id }
-    } as any); 
+    const nuevoParto = await this.partosRepo.save({
+      numero_parto: datos.numero_parto,
+      tipo_parto: datos.tipo_parto,
+      fincaId: Number(fincaId),
+      diagnostico_prenez: { id: diag.id }
+    } as any);
 
-    await this.partosRepo.save(nuevoParto);
-
-    await this.partosRepo.save(nuevoParto);
-
-    // 🌟 CREAR LA CRÍA CON QUERY BUILDER (PARA QUE NO SALGA NULL)
+    // 2. CREAR LA CRÍA (INYECCIÓN SQL PURA - LA OPCIÓN NUCLEAR)
     if (datos.tipo_parto !== 'Aborto') {
-        const nuevaCria = {
-            arete: `CRIA-${Date.now().toString().slice(-4)}`,
-            nombre: datos.nombre_animal || `Cría de ${diag.monta.hembra.arete}`,
-            sexo: datos.sexo || 'Hembra',
-            peso_nacimiento: 35, 
-            peso_actual: 35,
-            fecha_nacimiento: this.getHoy(),
-            estado_reproductivo: 'Vacía',
-            estado_salud: 'sano',
-            // 👇 Usamos los nombres reales de la tabla de Sherly
-            finca_id: Number(fincaId), 
-            animal_madre_id: diag.monta.hembra.animal_id,
-            animal_padre_id: diag.monta.macho ? diag.monta.macho.animal_id : null,
-        }; 
-
-        await this.animalesRepo.createQueryBuilder()
-            .insert()
-            .into('animales')
-            .values(nuevaCria)
-            .execute();
+      const areteCria = `CRIA-${Date.now().toString().slice(-4)}`;
+      const nombreCria = datos.nombre_animal || `Cría de ${diag.monta.hembra.arete}`;
+      const sexoCria = datos.sexo || 'Hembra';
+      
+      await this.animalesRepo.query(
+        `INSERT INTO animales 
+        (arete, nombre, sexo, peso_nacimiento, peso_actual, fecha_nacimiento, estado_reproductivo, finca_id, animal_madre_id, animal_padre_id) 
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+        [
+          areteCria,                      
+          nombreCria,                     
+          sexoCria,                       
+          35,                             
+          35,                             
+          new Date(),                     
+          'Vacía',                        
+          Number(fincaId),                // ¡ESTO GARANTIZA EL FINCA_ID!
+          diag.monta.hembra.animal_id,    
+          diag.monta.macho ? diag.monta.macho.animal_id : null 
+        ]
+      );
     }
+
+    await this.animalesRepo.update(diag.monta.hembra.animal_id, {
+      estado_reproductivo: datos.tipo_parto === 'Aborto' ? 'Vacía' : 'Lactando'
+    } as any);
+
+    await this.montasRepo.update(diag.monta.id, {
+      estado: datos.tipo_parto === 'Aborto' ? 'Aborto' : 'Parto Exitoso'
+    });
 
     return nuevoParto;
   }
+
   async obtenerPartos(fincaId: number) {
     return this.partosRepo.find({
       where: { fincaId },
@@ -268,4 +231,4 @@ export class ReproduccionService {
       order: { fecha_creacion: 'DESC' },
     });
   }
-}
+} // <- Esta llave final es crucial
