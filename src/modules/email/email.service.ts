@@ -14,6 +14,10 @@ export class EmailService {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
       },
+      // Forzamos IPv4 para evitar el error ENETUNREACH de la red de Render
+      tls: {
+        rejectUnauthorized: false
+      },
       // 👇 El truco anti-cuelgues: Si en 10 segundos no responde, ¡cuelga y tira error!
       connectionTimeout: 10000, 
       greetingTimeout: 10000,
