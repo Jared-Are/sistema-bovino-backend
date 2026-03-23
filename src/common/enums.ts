@@ -22,12 +22,3 @@ export enum EstadoTratamiento {
   COMPLETADO = 'COMPLETADO',
   CANCELADO = 'CANCELADO',
 }
-export enum EstadoReproductivo {
-  VACIA = 'Vacía',
-  GESTANTE = 'Gestante',
-  LACTANDO = 'Lactando',
-  SECA = 'Seca',
-  EN_CELO = 'En celo',
-  INSEMINADA = 'Inseminada',
-  PARIDA = 'Parida',
-}

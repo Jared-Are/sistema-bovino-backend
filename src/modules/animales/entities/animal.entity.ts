@@ -3,7 +3,7 @@ import { Finca } from '../../fincas/entities/finca.entity';
 import { Raza } from '../../parametros/entities/raza.entity';
 import { Lote } from '../../parametros/entities/lote.entity';
 import { Potrero } from '../../parametros/entities/potrero.entity';
-import { EstadoReproductivo, SexoAnimal } from '../../../common/enums';
+import { SexoAnimal } from '../../../common/enums';
 
 @Entity('animales')
 export class Animal {
@@ -33,9 +33,6 @@ export class Animal {
 
   @Column({ length: 255, nullable: true })
   imagen: string;
-
-  @Column({ type: 'enum', enum: EstadoReproductivo, default: EstadoReproductivo.VACIA })
-  estado_reproductivo: EstadoReproductivo;
 
   @CreateDateColumn({ type: 'timestamptz' })
   fecha_creacion: Date;

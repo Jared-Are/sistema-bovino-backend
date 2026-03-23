@@ -1,6 +1,6 @@
 import { IsString, IsNotEmpty, IsOptional, IsNumber, IsEnum, IsDateString } from 'class-validator';
 import { PartialType } from '@nestjs/mapped-types';
-import { EstadoReproductivo, SexoAnimal } from '../../../common/enums';
+import { SexoAnimal } from '../../../common/enums';
 
 export class CrearAnimalDto {
   @IsString({ message: 'El arete debe ser texto' })
@@ -34,10 +34,6 @@ export class CrearAnimalDto {
   @IsString()
   @IsOptional()
   imagen?: string;
-
-  @IsString()
-  @IsOptional()
-  estado_reproductivo?: EstadoReproductivo;
 
   // -- Identificadores de Relaciones (Se dejan opcionales para flexibilidad del Frontend)
   @IsOptional()

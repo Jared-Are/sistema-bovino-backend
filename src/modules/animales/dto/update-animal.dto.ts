@@ -1,7 +1,6 @@
 import { PartialType } from '@nestjs/mapped-types';
 import { CreateAnimalDto } from './create-animal.dto';
 import { IsOptional, IsNumber, IsEnum, Min, Max, IsDateString, IsString } from 'class-validator';
-import { EstadoReproductivo } from 'src/common/enums';
 export class UpdateAnimalDto extends PartialType(CreateAnimalDto) {
  
   @IsString()
@@ -17,10 +16,6 @@ export class UpdateAnimalDto extends PartialType(CreateAnimalDto) {
   @IsDateString()
   @IsOptional()
   fecha_destete?: string;
-
-  @IsEnum(EstadoReproductivo)
-  @IsOptional()
-  estado_reproductivo?: EstadoReproductivo;
 
   @IsNumber()
   @IsOptional()
