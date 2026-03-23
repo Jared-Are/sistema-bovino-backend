@@ -1,13 +1,12 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, IsNull } from 'typeorm';
 import { Usuario } from './entities/usuario.entity';
 import * as bcrypt from 'bcrypt';
 import { CrearUsuarioDto } from './dto/crear-usuario.dto';
 import { ActualizarUsuarioDto } from './dto/actualizar-usuario.dto';
 import { RolUsuario, EstadoUsuario } from '../../common/enums';
 import { EmailService } from '../email/email.service';
-import { IsNull } from 'typeorm/browser';
 
 @Injectable()
 export class UsuariosService {
