@@ -1,4 +1,4 @@
-import { Entity, PrimaryColumn, Column, CreateDateColumn, ManyToOne, JoinColumn, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity, DeleteDateColumn, Column, CreateDateColumn, ManyToOne, JoinColumn, PrimaryGeneratedColumn } from 'typeorm';
 import { RolUsuario, EstadoUsuario } from '../../../common/enums';
 
 @Entity('usuarios')
@@ -35,4 +35,7 @@ export class Usuario {
 
   @Column({ default: true }) // Lo que pediste para forzar el cambio
   debe_cambiar_contrasena: boolean;
+
+  @DeleteDateColumn({ type: 'timestamptz', nullable: true }) // ← AGREGAR
+  fecha_eliminacion: Date;
 }
