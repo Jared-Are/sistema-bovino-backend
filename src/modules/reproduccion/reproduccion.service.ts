@@ -168,12 +168,27 @@ export class ReproduccionService {
     return guardado;
   }
 
-  async obtenerDiagnosticos(fincaId: number) {
-    return this.diagnosticosRepo.find({
+ async obtenerDiagnosticos(fincaId: number) {
+    const diagnosticos = await this.diagnosticosRepo.find({
       where: { fincaId },
       relations: ['monta', 'monta.hembra'],
       order: { fecha_creacion: 'DESC' },
     });
+
+    // 👇 AQUÍ ESTÁ LA CORRECCIÓN: Le decimos que es un arreglo de DiagnosticoPrenez (o any)
+    const diagnosticosActivos: any[] = [];
+    
+    for (const diag of diagnosticos) {
+      const tieneParto = await this.partosRepo.findOne({
+        where: { diagnostico_prenez: { id: diag.id } }
+      });
+
+      if (!tieneParto) {
+        diagnosticosActivos.push(diag);
+      }
+    }
+
+    return diagnosticosActivos;
   }
 
   // =====================================
@@ -242,7 +257,7 @@ async registrarParto(datos: RegistrarPartoDto, fincaId: number) {
 
     return nuevoParto;
   }
-  
+
   async obtenerPartos(fincaId: number) {
     return this.partosRepo.find({
       where: { fincaId },
