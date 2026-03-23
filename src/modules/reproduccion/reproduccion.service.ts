@@ -123,6 +123,15 @@ export class ReproduccionService {
   // =====================================
 
   async registrarDiagnostico(datos: any, fincaId: number, usuarioId: string) {
+    // 🔒 CANDADO 1: Verificar que la monta no tenga ya un diagnóstico
+    const diagnosticoExistente = await this.diagnosticosRepo.findOne({
+      where: { monta: { id: datos.montaId } }
+    });
+    
+    if (diagnosticoExistente) {
+      throw new BadRequestException('Esta monta ya tiene un diagnóstico registrado.');
+    }
+
     const monta = await this.montasRepo.findOne({
       where: { id: datos.montaId },
       relations: ['hembra'],
@@ -132,7 +141,7 @@ export class ReproduccionService {
 
     const nuevo = this.diagnosticosRepo.create({
       ...datos,
-      numero_prenez: `PRE-${Date.now().toString().slice(-4)}`, // ARREGLO DEL DIAGNOSTICO
+      numero_prenez: `PRE-${Date.now().toString().slice(-4)}`,
       fincaId,
       fecha_programacion: datos.fecha_programacion || this.getHoy(),
       monta: { id: datos.montaId },
@@ -170,9 +179,17 @@ export class ReproduccionService {
   // =====================================
   // SECCIÓN DE PARTOS
   // =====================================
-
-  async registrarParto(datos: RegistrarPartoDto, fincaId: number) {
+async registrarParto(datos: RegistrarPartoDto, fincaId: number) {
     if (!fincaId) throw new Error("ID de finca no proporcionado");
+
+    // 🔒 CANDADO 2: Evitar la clonación infinita (Verificar que no exista un parto para este diagnóstico)
+    const partoExistente = await this.partosRepo.findOne({
+      where: { diagnostico_prenez: { id: datos.diagnosticoId } }
+    });
+
+    if (partoExistente) {
+      throw new BadRequestException('Ya existe un parto registrado para esta gestación. No se pueden registrar múltiples partos.');
+    }
 
     const diag = await this.diagnosticosRepo.findOne({
       where: { id: datos.diagnosticoId },
@@ -184,11 +201,11 @@ export class ReproduccionService {
     const nuevoParto = await this.partosRepo.save({
       numero_parto: datos.numero_parto,
       tipo_parto: datos.tipo_parto,
-      fincaId: Number(fincaId),
+      fincaId: Number(fincaId), // Garantiza aislamiento de la finca
       diagnostico_prenez: { id: diag.id }
     } as any);
 
-    // 2. CREAR LA CRÍA (INYECCIÓN SQL PURA - LA OPCIÓN NUCLEAR)
+    // 2. CREAR LA CRÍA (INYECCIÓN SQL PURA)
     if (datos.tipo_parto !== 'Aborto') {
       const areteCria = `CRIA-${Date.now().toString().slice(-4)}`;
       const nombreCria = datos.nombre_animal || `Cría de ${diag.monta.hembra.arete}`;
@@ -206,24 +223,26 @@ export class ReproduccionService {
           35,                             
           new Date(),                     
           'Vacía',                        
-          Number(fincaId),                // ¡ESTO GARANTIZA EL FINCA_ID!
+          Number(fincaId),                // ¡ESTO GARANTIZA EL FINCA_ID PARA LA CRÍA!
           diag.monta.hembra.animal_id,    
           diag.monta.macho ? diag.monta.macho.animal_id : null 
         ]
       );
     }
 
+    // Actualizamos a la madre
     await this.animalesRepo.update(diag.monta.hembra.animal_id, {
       estado_reproductivo: datos.tipo_parto === 'Aborto' ? 'Vacía' : 'Lactando'
     } as any);
 
+    // Actualizamos la monta original a completada
     await this.montasRepo.update(diag.monta.id, {
       estado: datos.tipo_parto === 'Aborto' ? 'Aborto' : 'Parto Exitoso'
     });
 
     return nuevoParto;
   }
-
+  
   async obtenerPartos(fincaId: number) {
     return this.partosRepo.find({
       where: { fincaId },
