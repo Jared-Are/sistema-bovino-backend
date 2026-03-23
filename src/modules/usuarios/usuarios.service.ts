@@ -7,6 +7,7 @@ import { CrearUsuarioDto } from './dto/crear-usuario.dto';
 import { ActualizarUsuarioDto } from './dto/actualizar-usuario.dto';
 import { RolUsuario, EstadoUsuario } from '../../common/enums';
 import { EmailService } from '../email/email.service';
+import { IsNull } from 'typeorm/browser';
 
 @Injectable()
 export class UsuariosService {
@@ -20,6 +21,7 @@ export class UsuariosService {
     return this.usuarioRepository.createQueryBuilder('usuario')
       .leftJoinAndSelect('usuario.finca', 'finca')
       .where('usuario.telefono = :telefono', { telefono: identificador })
+      .andWhere('usuario.fecha_eliminacion IS NULL') 
       .orWhere('usuario.email = :email', { email: identificador })
       .addSelect('usuario.contrasena')
       .getOne();
@@ -27,14 +29,18 @@ export class UsuariosService {
 
   async buscarPorTelefono(telefono: string) {
     return this.usuarioRepository.findOne({
-      where: { telefono },
+      where: { telefono,
+        fecha_eliminacion: IsNull()
+       },
       relations: ['finca']
     });
   }
 
   async buscarPorId(id: string) {
     return this.usuarioRepository.findOne({
-      where: { usuario_id: id },
+      where: { usuario_id: id ,
+        fecha_eliminacion: IsNull()
+      },
       relations: ['finca']
     });
   }
@@ -58,28 +64,6 @@ export class UsuariosService {
     nuevoUsuario.debe_cambiar_contrasena = true;
 
     return this.usuarioRepository.save(nuevoUsuario);
-  }
-
-  async cambiarContrasenaInicial(usuarioId: string, nuevaContrasena: string): Promise<boolean> {
-    const usuario = await this.usuarioRepository.findOne({
-      where: { usuario_id: usuarioId },
-      select: ['usuario_id', 'debe_cambiar_contrasena', 'contrasena']
-    });
-    
-    if (!usuario) {
-      throw new NotFoundException('Usuario no encontrado');
-    }
-
-    if (!usuario.debe_cambiar_contrasena) {
-      throw new BadRequestException('El usuario ya cambió su contraseña inicial');
-    }
-
-    const salt = await bcrypt.genSalt(10);
-    usuario.contrasena = await bcrypt.hash(nuevaContrasena, salt);
-    usuario.debe_cambiar_contrasena = false;
-    
-    await this.usuarioRepository.save(usuario);
-    return true;
   }
 
   async cambiarContrasena(usuarioId: string, nuevaContrasena: string) {
@@ -199,7 +183,8 @@ export class UsuariosService {
 
   async obtenerUsuariosDeFinca(fincaId: number) {
     return this.usuarioRepository.find({
-      where: { finca: { finca_id: fincaId } },
+      where: { finca: { finca_id: fincaId },
+    fecha_eliminacion: IsNull() },
       relations: ['finca'],
       select: [
         'usuario_id', 
@@ -219,7 +204,8 @@ export class UsuariosService {
     const usuario = await this.usuarioRepository.findOne({
       where: { 
         usuario_id: usuarioId,
-        finca: { finca_id: fincaId }
+        finca: { finca_id: fincaId },
+        fecha_eliminacion: IsNull()
       },
       relations: ['finca'],
       select: [
@@ -314,6 +300,8 @@ export class UsuariosService {
       if (propietarios <= 1) {
         throw new BadRequestException('No se puede eliminar el único propietario de la finca');
       }
+      await this.usuarioRepository.softDelete(usuarioId);
+
     }
 
     const resultado = await this.usuarioRepository.delete({
