@@ -8,6 +8,9 @@ export class Tratamiento {
   @PrimaryGeneratedColumn()
   id: number;
 
+  @Column({ name: 'numero_tratamiento', nullable: true, unique: true })
+  numero_tratamiento: string;
+
   @Column({ name: 'tipo_tratamiento_id' })
   tipo_tratamiento_id: number;
 

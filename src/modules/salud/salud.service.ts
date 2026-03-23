@@ -17,6 +17,24 @@ export class SaludService {
     private tipoRepo: Repository<TipoTratamiento>,
   ) {}
 
+  private async generarNumeroTratamiento(): Promise<string> {
+    const ultimoTratamiento = await this.tratamientoRepo
+      .createQueryBuilder('t')
+      .where('t.numero_tratamiento IS NOT NULL')
+      .orderBy('t.id', 'DESC')
+      .getOne();
+
+    let numero = 1;
+    if (ultimoTratamiento && ultimoTratamiento.numero_tratamiento) {
+      const match = ultimoTratamiento.numero_tratamiento.match(/TRAT-(\d{4})/);
+      if (match) {
+        numero = parseInt(match[1]) + 1;
+      }
+    }
+
+    return `TRAT-${numero.toString().padStart(4, '0')}`;
+  }
+
   async createTipo(dto: CreateTipoTratamientoDto, fincaId: number) {
     const existe = await this.tipoRepo.findOneBy({ nombre: dto.nombre, finca_id: fincaId });
     if (existe) throw new BadRequestException('El nombre ya existe en tu finca');
@@ -58,7 +76,14 @@ export class SaludService {
       .findOneBy({ animal_id: dto.animal_id, finca: { finca_id: fincaId } });
     if (!animal) throw new BadRequestException('Animal no válido');
 
-    const tratamiento = this.tratamientoRepo.create(dto);
+    // Generar número de tratamiento automáticamente
+    const numeroTratamiento = await this.generarNumeroTratamiento();
+
+    const tratamiento = this.tratamientoRepo.create({
+      ...dto,
+      numero_tratamiento: numeroTratamiento,
+    });
+    
     return this.tratamientoRepo.save(tratamiento);
   }
 
@@ -94,12 +119,16 @@ export class SaludService {
       await this.findOneTipo(dto.tipo_tratamiento_id, fincaId);
     }
     
-    Object.assign(tratamiento, dto);
+    //el numero_tratamiento NO se puede actualizar
+    const { numero_tratamiento, ...datosActualizables } = dto as any;
+    
+    Object.assign(tratamiento, datosActualizables);
     return this.tratamientoRepo.save(tratamiento);
   }
 
   async removeTratamiento(id: number, fincaId: number) {
     await this.findOneTratamiento(id, fincaId);
     await this.tratamientoRepo.softDelete(id);
+    return { message: 'Tratamiento eliminado correctamente' };
   }
 }

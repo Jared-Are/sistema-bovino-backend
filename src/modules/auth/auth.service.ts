@@ -48,7 +48,8 @@ export class AuthService {
         sub: usuario.usuario_id, 
         telefono: usuario.telefono,
         rol: usuario.rol,
-        fincaId: usuario.finca?.finca_id
+        fincaId: usuario.finca?.finca_id,
+        nombre: usuario.nombre
     };
 
     return {
@@ -110,5 +111,4 @@ export class AuthService {
 
     return this.generarToken(nuevoUsuario);
   }
-
 }

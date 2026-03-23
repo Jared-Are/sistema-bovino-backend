@@ -28,5 +28,5 @@ export class ActualizarUsuarioDto {
 
   @IsOptional()
   finca_id?: number;
-  contrasena: string; // any
+  contrasena: string; 
 }

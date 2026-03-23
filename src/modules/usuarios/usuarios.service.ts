@@ -16,8 +16,6 @@ export class UsuariosService {
     private emailService: EmailService,
   ) {}
 
-  // ==================== MÉTODOS PARA AUTH ====================
-
   async buscarPorIdentificador(identificador: string): Promise<Usuario | null> {
     return this.usuarioRepository.createQueryBuilder('usuario')
       .leftJoinAndSelect('usuario.finca', 'finca')
@@ -84,23 +82,47 @@ export class UsuariosService {
     return true;
   }
 
-  async actualizarContrasena(usuarioId: string, nuevaContrasena: string) {
+  async cambiarContrasena(usuarioId: string, nuevaContrasena: string) {
+    // Buscar usuario
+    const usuario = await this.usuarioRepository.findOne({
+      where: { usuario_id: usuarioId }
+    });
+
+    if (!usuario) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+
+    // Validar que la nueva contraseña sea diferente a la actual (si existe)
+    if (usuario.contrasena) {
+      const esMismaContrasena = await bcrypt.compare(nuevaContrasena, usuario.contrasena);
+      if (esMismaContrasena) {
+        throw new BadRequestException('La nueva contraseña debe ser diferente a la actual');
+      }
+    }
+    if (nuevaContrasena.length < 6) {
+      throw new BadRequestException('La nueva contraseña debe tener al menos 6 caracteres');
+    }
+
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(nuevaContrasena, salt);
-
-    await this.usuarioRepository.update(
+    
+    const updateResult = await this.usuarioRepository.update(
       { usuario_id: usuarioId },
       { 
         contrasena: hashedPassword,
-        debe_cambiar_contrasena: false 
+        debe_cambiar_contrasena: false
       }
     );
     
-    return { mensaje: 'Contraseña actualizada correctamente' };
+    console.log('Update result:', updateResult);
+    
+    return { 
+      mensaje: 'Contraseña actualizada correctamente',
+      debe_cambiar_contrasena: false 
+    };
   }
 
-  // ==================== CRUD PARA PROPIETARIO ====================
-
+  // crud para propietario 
   async crearUsuario(datos: CrearUsuarioDto, fincaId: number): Promise<Usuario> {
     // Validar que no exista otro propietario en la finca
     if (datos.rol === RolUsuario.PROPIETARIO) {
@@ -140,7 +162,6 @@ export class UsuariosService {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(contrasenaPlana, salt);
 
-    // Crear usuario
     const nuevoUsuario = this.usuarioRepository.create({
       nombre: datos.nombre,
       telefono: datos.telefono,
@@ -148,7 +169,7 @@ export class UsuariosService {
       contrasena: hashedPassword,
       rol: datos.rol,
       finca: { finca_id: fincaId },
-      estado: EstadoUsuario.INVITADO,
+      estado: EstadoUsuario.INVITADO, 
       debe_cambiar_contrasena: true
     });
 
@@ -307,7 +328,12 @@ export class UsuariosService {
     return { message: 'Usuario eliminado correctamente' };
   }
 
-  // ==================== MÉTODOS PRIVADOS ====================
+  async actualizarEstado(usuarioId: string, nuevoEstado: EstadoUsuario) {
+    await this.usuarioRepository.update(
+      { usuario_id: usuarioId },
+      { estado: nuevoEstado }
+    );
+  }
 
   private generarContrasenaTemporal(): string {
     const caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -317,10 +343,4 @@ export class UsuariosService {
     }
     return contrasena;
   }
-  async actualizarEstado(usuarioId: string, nuevoEstado: EstadoUsuario) {
-  await this.usuarioRepository.update(
-    { usuario_id: usuarioId },
-    { estado: nuevoEstado }
-  );
-}
 }

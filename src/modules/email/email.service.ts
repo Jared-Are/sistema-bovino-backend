@@ -1,4 +1,3 @@
-// src/modules/email/email.service.ts
 import { Injectable } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 
@@ -69,8 +68,8 @@ export class EmailService {
 
     try {
       await this.transporter.sendMail(mailOptions);
-      console.log(`Credenciales enviadas a ${email}`);
     } catch (error) {
+      console.error('Error al enviar el correo:', error); 
     }
   }
 }
