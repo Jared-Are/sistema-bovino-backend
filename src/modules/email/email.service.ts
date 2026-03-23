@@ -69,7 +69,7 @@ export class EmailService {
     try {
       await this.transporter.sendMail(mailOptions);
     } catch (error) {
-      console.error('Error al enviar el correo:', error); 
+      console.error('Error al enviar el correo:', {email});
     }
   }
 }
