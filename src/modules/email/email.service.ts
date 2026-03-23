@@ -8,21 +8,20 @@ export class EmailService {
   constructor() {
     this.transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || 'smtp.gmail.com',
-      port: parseInt(process.env.SMTP_PORT || '465'),
+      port: parseInt(process.env.SMTP_PORT || '465', 10),
       secure: true,
       auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
+      user: process.env.SMTP_USER || '',
+        pass: process.env.SMTP_PASS || '',
       },
-      // Forzamos IPv4 para evitar el error ENETUNREACH de la red de Render
+      family: 4, 
       tls: {
         rejectUnauthorized: false
       },
-      // 👇 El truco anti-cuelgues: Si en 10 segundos no responde, ¡cuelga y tira error!
       connectionTimeout: 10000, 
       greetingTimeout: 10000,
       socketTimeout: 10000,
-    });
+    }as any);
   }
 
   async enviarCredenciales(
@@ -78,6 +77,7 @@ export class EmailService {
       await this.transporter.sendMail(mailOptions);
     } catch (error) {
       console.error('Error al enviar el correo a ${email}:', error);
+      throw new Error('El usuario se creó, pero hubo un error al enviar el correo.');
     }
   }
 }
