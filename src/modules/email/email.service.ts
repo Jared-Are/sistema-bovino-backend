@@ -8,8 +8,8 @@ export class EmailService {
   constructor() {
     this.transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || 'smtp.gmail.com',
-      port: parseInt(process.env.SMTP_PORT || '465', 10),
-      secure: true,
+      port: parseInt(process.env.SMTP_PORT || '587', 10),
+      secure: process.env.SMTP_PORT === '465',
       auth: {
       user: process.env.SMTP_USER || '',
         pass: process.env.SMTP_PASS || '',
@@ -75,6 +75,7 @@ export class EmailService {
 
     try {
       await this.transporter.sendMail(mailOptions);
+      
     } catch (error) {
       console.error('Error al enviar el correo a ${email}:', error);
       throw new Error('El usuario se creó, pero hubo un error al enviar el correo.');
