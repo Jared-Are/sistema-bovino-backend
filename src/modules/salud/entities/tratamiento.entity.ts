@@ -8,8 +8,8 @@ export class Tratamiento {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ name: 'numero_tratamiento', nullable: true })
-  numero_tratamiento: string;
+  @Column({ name: 'numero_tratamiento', type: 'varchar', nullable: true })
+  numero_tratamiento: string | null;  // 👈 Agregar | null
 
   @Column({ name: 'tipo_tratamiento_id' })
   tipo_tratamiento_id: number;
