@@ -10,7 +10,7 @@ import { DiagnosticoPrenez } from './entities/diagnostico-prenez.entity';
 import { Parto } from './entities/parto.entity';
 import { Animal } from '../animales/entities/animal.entity';
 import { NotificacionesService } from '../notificaciones/notificaciones.service';
-import { RegistrarMontaDto, RegistrarDiagnosticoDto, RegistrarPartoDto } from './dto/reproduccion.dto';
+import { RegistrarPartoDto } from './dto/reproduccion.dto';
 
 @Injectable()
 export class ReproduccionService {
@@ -265,4 +265,31 @@ async registrarParto(datos: RegistrarPartoDto, fincaId: number) {
       order: { fecha_creacion: 'DESC' },
     });
   }
-} // <- Esta llave final es crucial
+
+
+  async findByAnimal(animalId: number, fincaId: number, limit?: number) {
+  try {
+    console.log('🔍 Buscando montas para animal:', { animalId, fincaId, limit });
+    
+    const query = this.montasRepo
+      .createQueryBuilder('m')
+      .leftJoinAndSelect('m.hembra', 'hembra')
+      .leftJoinAndSelect('m.macho', 'macho')
+      .where('m.animal_hembra_id = :animalId', { animalId }) // ✅ Usar animal_hembra_id
+      .andWhere('m.finca_id = :fincaId', { fincaId }) // ✅ Usar finca_id (nombre en BD)
+      .orderBy('m.fecha_creacion', 'DESC');
+    
+    if (limit) {
+      query.limit(limit);
+    }
+    
+    const result = await query.getMany();
+    console.log('✅ Montas encontradas:', result.length);
+    return result;
+    
+  } catch (error) {
+    console.error('❌ Error en findByAnimal:', error);
+    throw error;
+  }
+}
+} 

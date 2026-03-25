@@ -122,4 +122,35 @@ export class ProduccionService {
 
     return this.produccionCarneRepo.softDelete(id);
   }
+  async findLecheByAnimal(animalId: number, fincaId: number, limit?: number) {
+    const query = this.produccionLecheraRepo
+      .createQueryBuilder('pl')
+      .leftJoinAndSelect('pl.animal', 'animal')
+      .where('pl.animal_id = :animalId', { animalId })
+      .andWhere('pl.fincaId = :fincaId', { fincaId })
+      .andWhere('pl.fecha_eliminacion IS NULL')
+      .orderBy('pl.fecha_creacion', 'DESC');
+    
+    if (limit) {
+      query.limit(limit);
+    }
+    
+    return query.getMany();
+  }
+
+  async findCarneByAnimal(animalId: number, fincaId: number, limit?: number) {
+    const query = this.produccionCarneRepo
+      .createQueryBuilder('pc')
+      .leftJoinAndSelect('pc.animal', 'animal')
+      .where('pc.animal_id = :animalId', { animalId })
+      .andWhere('pc.fincaId = :fincaId', { fincaId })
+      .andWhere('pc.fecha_eliminacion IS NULL')
+      .orderBy('pc.fecha_creacion', 'DESC');
+    
+    if (limit) {
+      query.limit(limit);
+    }
+    
+    return query.getMany();
+  }
 }

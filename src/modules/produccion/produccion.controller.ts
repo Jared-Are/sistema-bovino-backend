@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
 import { ProduccionService } from './produccion.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UsuarioActual } from '../../common/decorators/usuario.decorator';
@@ -19,9 +19,20 @@ export class ProduccionController {
     return this.produccionService.registrarLeche(body, usuario.fincaId);
   }
 
-  @Get('leche')
+    @Get('leche')
   @Roles(RolUsuario.PROPIETARIO, RolUsuario.OPERARIO)
-  obtenerLeche(@UsuarioActual() usuario: any) {
+  obtenerLeche(
+    @UsuarioActual() usuario: any,
+    @Query('animalId') animalId?: string,  
+    @Query('limit') limit?: string          
+  ) {
+    if (animalId) {
+      return this.produccionService.findLecheByAnimal(
+        parseInt(animalId),
+        usuario.fincaId,
+        limit ? parseInt(limit) : undefined
+      );
+    }
     return this.produccionService.obtenerLeche(usuario.fincaId);
   }
 
@@ -43,10 +54,20 @@ export class ProduccionController {
   registrarCarne(@Body() body: RegistrarCarneDto, @UsuarioActual() usuario: any) {
     return this.produccionService.registrarCarne(body, usuario.fincaId);
   }
-
-  @Get('carne')
+ @Get('carne')
   @Roles(RolUsuario.PROPIETARIO, RolUsuario.OPERARIO)
-  obtenerCarne(@UsuarioActual() usuario: any) {
+  obtenerCarne(
+    @UsuarioActual() usuario: any,
+    @Query('animalId') animalId?: string,  
+    @Query('limit') limit?: string         
+  ) {
+    if (animalId) {
+      return this.produccionService.findCarneByAnimal(
+        parseInt(animalId),
+        usuario.fincaId,
+        limit ? parseInt(limit) : undefined
+      );
+    }
     return this.produccionService.obtenerCarne(usuario.fincaId);
   }
 

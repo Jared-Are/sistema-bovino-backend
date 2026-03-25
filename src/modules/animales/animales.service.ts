@@ -14,29 +14,52 @@ export class AnimalesService {
 
   async create(createAnimalDto: CreateAnimalDto, fincaId: number) {
     if (createAnimalDto.fecha_destete && new Date(createAnimalDto.fecha_destete) < new Date(createAnimalDto.fecha_nacimiento)) {
-      throw new BadRequestException('La fecha de destete no puede ser anterior a la fecha de nacimiento');
-    }
+    throw new BadRequestException('La fecha de destete no puede ser anterior a la fecha de nacimiento');
+  }
 
-    const animalData: any = {
-      arete: createAnimalDto.arete,
-      nombre: createAnimalDto.nombre || null,
-      sexo: createAnimalDto.sexo,
-      peso_nacimiento: createAnimalDto.peso_nacimiento || 0,
-      peso_actual: createAnimalDto.peso_actual || createAnimalDto.peso_nacimiento || 0,
-      fecha_nacimiento: createAnimalDto.fecha_nacimiento,
-      fecha_destete: createAnimalDto.fecha_destete || null,
-      imagen: createAnimalDto.imagen || null,
+  const existeArete = await this.animalesRepository.findOne({
+    where: {
+      arete: createAnimalDto.arete.toUpperCase(),
       finca: { finca_id: fincaId },
-    };
+      fecha_eliminacion: IsNull()
+    }
+  });
 
-    if (createAnimalDto.raza_id) animalData.raza = { raza_id: createAnimalDto.raza_id };
-    if (createAnimalDto.lote_id) animalData.lote = { lote_id: createAnimalDto.lote_id };
-    if (createAnimalDto.potrero_id) animalData.potrero = { potrero_id: createAnimalDto.potrero_id };
-    if (createAnimalDto.animal_madre_id) animalData.madre = { animal_id: createAnimalDto.animal_madre_id };
-    if (createAnimalDto.animal_padre_id) animalData.padre = { animal_id: createAnimalDto.animal_padre_id };
+  if (existeArete) {
+    throw new BadRequestException(`El arete "${createAnimalDto.arete}" ya está registrado`);
+  }
 
-    const nuevoAnimal = this.animalesRepository.create(animalData);
-    return this.animalesRepository.save(nuevoAnimal);
+  const animalData: any = {
+    arete: createAnimalDto.arete.toUpperCase(),
+    nombre: createAnimalDto.nombre || null,
+    sexo: createAnimalDto.sexo,
+    peso_nacimiento: createAnimalDto.peso_nacimiento || 0,
+    peso_actual: createAnimalDto.peso_actual || createAnimalDto.peso_nacimiento || 0,
+    fecha_nacimiento: createAnimalDto.fecha_nacimiento,
+    fecha_destete: createAnimalDto.fecha_destete || null,
+    imagen: createAnimalDto.imagen || null,
+    finca: { finca_id: fincaId },
+  };
+
+  if (createAnimalDto.raza_id) animalData.raza = { raza_id: createAnimalDto.raza_id };
+  if (createAnimalDto.lote_id) animalData.lote = { lote_id: createAnimalDto.lote_id };
+  if (createAnimalDto.potrero_id) animalData.potrero = { potrero_id: createAnimalDto.potrero_id };
+  if (createAnimalDto.animal_madre_id) animalData.madre = { animal_id: createAnimalDto.animal_madre_id };
+  if (createAnimalDto.animal_padre_id) animalData.padre = { animal_id: createAnimalDto.animal_padre_id };
+
+  const nuevoAnimal = this.animalesRepository.create(animalData);
+  return this.animalesRepository.save(nuevoAnimal);
+  }
+
+  async checkArete(arete: string, fincaId: number): Promise<boolean> {
+    const animal = await this.animalesRepository.findOne({
+      where: {
+        arete: arete.toUpperCase(),
+        finca: { finca_id: fincaId },
+        fecha_eliminacion: IsNull()
+      }
+    });
+    return !!animal;
   }
 
   async findAll(fincaId: number) {
