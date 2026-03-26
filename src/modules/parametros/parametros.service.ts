@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm'; 
 import { Raza } from './entities/raza.entity';
@@ -15,6 +15,10 @@ export class ParametrosService {
 
   // --- RAZAS ---
   async crearRaza(datos: any, fincaId: number) {
+    const existe = await this.verificarNombreRaza(datos.nombre, fincaId);
+    if (existe) {
+      throw new ConflictException(`La raza "${datos.nombre}" ya está registrada`);
+    }
     return this.razaRepo.save({ ...datos, finca: { finca_id: fincaId } as any });
   }
 
@@ -41,9 +45,21 @@ export class ParametrosService {
     await this.obtenerRazaPorId(id, fincaId);
     return this.razaRepo.softDelete(id); // Tu borrado seguro
   }
-
+  async verificarNombreRaza(nombre: string, fincaId: number): Promise<boolean> {
+    const raza = await this.razaRepo.findOne({
+      where: { 
+        nombre: nombre, 
+        finca: { finca_id: fincaId } 
+      }
+    });
+    return !!raza;
+  }
   // --- LOTES ---
   async crearLote(datos: any, fincaId: number) {
+    const existe = await this.verificarNombreLote(datos.nombre, fincaId);
+    if (existe) {
+      throw new ConflictException(`El lote "${datos.nombre}" ya está registrado`);
+    }
     return this.loteRepo.save({ 
         ...datos, 
         finca: { finca_id: fincaId } as any 
@@ -73,9 +89,21 @@ export class ParametrosService {
     await this.obtenerLotePorId(id, fincaId);
     return this.loteRepo.softDelete(id);
   }
-
-  // --- POTREROS ---
+  async verificarNombreLote(nombre: string, fincaId: number): Promise<boolean> {
+    const lote = await this.loteRepo.findOne({
+      where: { 
+        nombre: nombre, 
+        finca: { finca_id: fincaId } 
+      }
+    });
+    return !!lote;
+  }
+    // --- POTREROS ---
   async crearPotrero(datos: any, fincaId: number) {
+    const existe = await this.verificarNombrePotrero(datos.nombre, fincaId);
+    if (existe) {
+      throw new ConflictException(`El potrero "${datos.nombre}" ya está registrado`);
+    }
     return this.potreroRepo.save({ 
         ...datos, 
         finca: { finca_id: fincaId } as any 
@@ -104,5 +132,14 @@ export class ParametrosService {
   async eliminarPotrero(id: number, fincaId: number) {
     await this.obtenerPotreroPorId(id, fincaId);
     return this.potreroRepo.softDelete(id);
+  }
+  async verificarNombrePotrero(nombre: string, fincaId: number): Promise<boolean> {
+    const potrero = await this.potreroRepo.findOne({
+      where: { 
+        nombre: nombre, 
+        finca: { finca_id: fincaId } 
+      }
+    });
+    return !!potrero;
   }
 }
