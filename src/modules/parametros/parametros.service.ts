@@ -40,10 +40,24 @@ export class ParametrosService {
     await this.obtenerRazaPorId(id, fincaId); // Reutilizamos la validación de Sherly
     return this.razaRepo.update(id, datos);
   }
-
+  async verificarRazaEnUso(id: number, fincaId: number): Promise<boolean> {
+    const animalesConRaza = await this.razaRepo
+      .createQueryBuilder('raza')
+      .leftJoin('raza.animales', 'animal')
+      .where('raza.raza_id = :id', { id })
+      .andWhere('animal.fecha_eliminacion IS NULL')
+      .getCount();
+    
+    return animalesConRaza > 0;
+  }
   async eliminarRaza(id: number, fincaId: number) {
+    const enUso = await this.verificarRazaEnUso(id, fincaId);
+    if (enUso) {
+      throw new ConflictException('No se puede eliminar la raza porque hay animales asociados a ella');
+    }
+    
     await this.obtenerRazaPorId(id, fincaId);
-    return this.razaRepo.softDelete(id); // Tu borrado seguro
+    return this.razaRepo.softDelete(id);
   }
   async verificarNombreRaza(nombre: string, fincaId: number): Promise<boolean> {
     const raza = await this.razaRepo.findOne({
