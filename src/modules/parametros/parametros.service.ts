@@ -37,28 +37,33 @@ export class ParametrosService {
   }
 
   async actualizarRaza(id: number, datos: { nombre?: string; descripcion?: string }, fincaId: number) {
-    await this.obtenerRazaPorId(id, fincaId); // Reutilizamos la validación de Sherly
+    await this.obtenerRazaPorId(id, fincaId);
     return this.razaRepo.update(id, datos);
   }
+
   async verificarRazaEnUso(id: number, fincaId: number): Promise<boolean> {
-    const animalesConRaza = await this.razaRepo
-      .createQueryBuilder('raza')
-      .leftJoin('raza.animales', 'animal')
-      .where('raza.raza_id = :id', { id })
-      .andWhere('animal.fecha_eliminacion IS NULL')
-      .getCount();
-    
-    return animalesConRaza > 0;
-  }
+  await this.obtenerRazaPorId(id, fincaId);
+  
+  const animalesConRaza = await this.razaRepo
+    .createQueryBuilder('raza')
+    .leftJoin('raza.animales', 'animal')
+    .where('raza.raza_id = :id', { id })
+    .andWhere('animal.fecha_eliminacion IS NULL')
+    .andWhere('animal.finca_id = :fincaId', { fincaId })
+    .getCount();
+  
+  return animalesConRaza > 0;
+}
+
   async eliminarRaza(id: number, fincaId: number) {
     const enUso = await this.verificarRazaEnUso(id, fincaId);
     if (enUso) {
       throw new ConflictException('No se puede eliminar la raza porque hay animales asociados a ella');
     }
     
-    await this.obtenerRazaPorId(id, fincaId);
     return this.razaRepo.softDelete(id);
   }
+
   async verificarNombreRaza(nombre: string, fincaId: number): Promise<boolean> {
     const raza = await this.razaRepo.findOne({
       where: { 
@@ -68,6 +73,7 @@ export class ParametrosService {
     });
     return !!raza;
   }
+
   // --- LOTES ---
   async crearLote(datos: any, fincaId: number) {
     const existe = await this.verificarNombreLote(datos.nombre, fincaId);
@@ -99,10 +105,29 @@ export class ParametrosService {
     return this.loteRepo.update(id, datos);
   }
 
+  async verificarLoteEnUso(id: number, fincaId: number): Promise<boolean> {
+  await this.obtenerLotePorId(id, fincaId);
+  
+  const animalesConLote = await this.loteRepo
+    .createQueryBuilder('lote')
+    .leftJoin('lote.animales', 'animal')
+    .where('lote.lote_id = :id', { id })
+    .andWhere('animal.fecha_eliminacion IS NULL')
+    .andWhere('animal.finca_id = :fincaId', { fincaId })
+    .getCount();
+  
+  return animalesConLote > 0;
+}
+
   async eliminarLote(id: number, fincaId: number) {
-    await this.obtenerLotePorId(id, fincaId);
+    const enUso = await this.verificarLoteEnUso(id, fincaId);
+    if (enUso) {
+      throw new ConflictException('No se puede eliminar el lote porque hay animales asociados a él');
+    }
+    
     return this.loteRepo.softDelete(id);
   }
+
   async verificarNombreLote(nombre: string, fincaId: number): Promise<boolean> {
     const lote = await this.loteRepo.findOne({
       where: { 
@@ -112,7 +137,8 @@ export class ParametrosService {
     });
     return !!lote;
   }
-    // --- POTREROS ---
+
+  // --- POTREROS ---
   async crearPotrero(datos: any, fincaId: number) {
     const existe = await this.verificarNombrePotrero(datos.nombre, fincaId);
     if (existe) {
@@ -143,10 +169,29 @@ export class ParametrosService {
     return this.potreroRepo.update(id, datos);
   }
 
+  async verificarPotreroEnUso(id: number, fincaId: number): Promise<boolean> {
+  await this.obtenerPotreroPorId(id, fincaId);
+  
+  const animalesConPotrero = await this.potreroRepo
+    .createQueryBuilder('potrero')
+    .leftJoin('potrero.animales', 'animal')
+    .where('potrero.potrero_id = :id', { id })
+    .andWhere('animal.fecha_eliminacion IS NULL')
+    .andWhere('animal.finca_id = :fincaId', { fincaId })
+    .getCount();
+  
+  return animalesConPotrero > 0;
+}
+
   async eliminarPotrero(id: number, fincaId: number) {
-    await this.obtenerPotreroPorId(id, fincaId);
+    const enUso = await this.verificarPotreroEnUso(id, fincaId);
+    if (enUso) {
+      throw new ConflictException('No se puede eliminar el potrero porque hay animales asociados a él');
+    }
+    
     return this.potreroRepo.softDelete(id);
   }
+
   async verificarNombrePotrero(nombre: string, fincaId: number): Promise<boolean> {
     const potrero = await this.potreroRepo.findOne({
       where: { 
