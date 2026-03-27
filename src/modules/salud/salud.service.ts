@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, IsNull } from 'typeorm';
+import { Repository, IsNull, Not } from 'typeorm';
 import { Tratamiento } from './entities/tratamiento.entity';
 import { TipoTratamiento } from './entities/tipo-tratamiento.entity';
 import { CreateTratamientoDto } from './dto/create-tratamiento.dto';
@@ -28,9 +28,25 @@ export class SaludService {
     return `TRAT-${(maxNumero + 1).toString().padStart(4, '0')}`;
   }
 
+  // ===== TIPOS DE TRATAMIENTO =====
+  
+  async verificarNombreTipo(nombre: string, fincaId: number, excludeId?: number): Promise<boolean> {
+    const queryBuilder = this.tipoRepo
+      .createQueryBuilder('tipo')
+      .where('tipo.nombre = :nombre', { nombre })
+      .andWhere('tipo.finca_id = :fincaId', { fincaId });
+    
+    if (excludeId) {
+      queryBuilder.andWhere('tipo.id != :excludeId', { excludeId });
+    }
+    
+    const tipo = await queryBuilder.getOne();
+    return !!tipo;
+  }
+
   async createTipo(dto: CreateTipoTratamientoDto, fincaId: number) {
-    const existe = await this.tipoRepo.findOneBy({ nombre: dto.nombre, finca_id: fincaId });
-    if (existe) throw new BadRequestException('El nombre ya existe en tu finca');
+    const existe = await this.verificarNombreTipo(dto.nombre, fincaId);
+    if (existe) throw new ConflictException('El nombre ya existe');
 
     const tipo = this.tipoRepo.create({ ...dto, finca_id: fincaId });
     return this.tipoRepo.save(tipo);
@@ -48,17 +64,43 @@ export class SaludService {
 
   async updateTipo(id: number, dto: UpdateTipoTratamientoDto, fincaId: number) {
     const tipo = await this.findOneTipo(id, fincaId);
+    
+    // Verificar si el nuevo nombre ya existe (excluyendo el actual)
+    if (dto.nombre && dto.nombre !== tipo.nombre) {
+      const existe = await this.verificarNombreTipo(dto.nombre, fincaId, id);
+      if (existe) {
+        throw new ConflictException(`El tipo "${dto.nombre}" ya está registrado`);
+      }
+    }
+    
     Object.assign(tipo, dto);
     return this.tipoRepo.save(tipo);
   }
 
+  async verificarTipoEnUso(id: number, fincaId: number): Promise<boolean> {
+    await this.findOneTipo(id, fincaId);
+    
+    const tratamientosConTipo = await this.tratamientoRepo
+      .createQueryBuilder('tratamiento')
+      .where('tratamiento.tipo_tratamiento_id = :id', { id })
+      .andWhere('tratamiento.fecha_eliminacion IS NULL')
+      .getCount();
+    
+    return tratamientosConTipo > 0;
+  }
+
   async removeTipo(id: number, fincaId: number) {
-    const enUso = await this.tratamientoRepo.countBy({ tipo_tratamiento_id: id });
-    if (enUso > 0) throw new BadRequestException('Tipo tiene tratamientos asociados');
+    const enUso = await this.verificarTipoEnUso(id, fincaId);
+    if (enUso) {
+      throw new ConflictException('No se puede eliminar el tipo porque hay tratamientos asociados a él');
+    }
+    
     await this.tipoRepo.softDelete(id);
     return { message: 'Tipo eliminado' };
   }
 
+  // ===== TRATAMIENTOS =====
+  
   async createTratamiento(dto: CreateTratamientoDto, fincaId: number) {
     await this.findOneTipo(dto.tipo_tratamiento_id, fincaId);
 

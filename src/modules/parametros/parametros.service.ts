@@ -37,6 +37,13 @@ export class ParametrosService {
   }
 
   async actualizarRaza(id: number, datos: { nombre?: string; descripcion?: string }, fincaId: number) {
+    if (datos.nombre) {
+      const existe = await this.verificarNombreRaza(datos.nombre, fincaId, id);
+      if (existe) {
+        throw new ConflictException(`La raza "${datos.nombre}" ya está registrada`);
+      }
+    }
+    
     await this.obtenerRazaPorId(id, fincaId);
     return this.razaRepo.update(id, datos);
   }
@@ -64,13 +71,17 @@ export class ParametrosService {
     return this.razaRepo.softDelete(id);
   }
 
-  async verificarNombreRaza(nombre: string, fincaId: number): Promise<boolean> {
-    const raza = await this.razaRepo.findOne({
-      where: { 
-        nombre: nombre, 
-        finca: { finca_id: fincaId } 
-      }
-    });
+  async verificarNombreRaza(nombre: string, fincaId: number, excludeId?: number): Promise<boolean> {
+    const queryBuilder = this.razaRepo
+      .createQueryBuilder('raza')
+      .where('raza.nombre = :nombre', { nombre })
+      .andWhere('raza.finca_id = :fincaId', { fincaId });
+    
+    if (excludeId) {
+      queryBuilder.andWhere('raza.raza_id != :excludeId', { excludeId });
+    }
+    
+    const raza = await queryBuilder.getOne();
     return !!raza;
   }
 
@@ -101,6 +112,13 @@ export class ParametrosService {
   }
 
   async actualizarLote(id: number, datos: any, fincaId: number) {
+    if (datos.nombre) {
+      const existe = await this.verificarNombreLote(datos.nombre, fincaId, id);
+      if (existe) {
+        throw new ConflictException(`El lote "${datos.nombre}" ya está registrado`);
+      }
+    }
+    
     await this.obtenerLotePorId(id, fincaId);
     return this.loteRepo.update(id, datos);
   }
@@ -128,13 +146,17 @@ export class ParametrosService {
     return this.loteRepo.softDelete(id);
   }
 
-  async verificarNombreLote(nombre: string, fincaId: number): Promise<boolean> {
-    const lote = await this.loteRepo.findOne({
-      where: { 
-        nombre: nombre, 
-        finca: { finca_id: fincaId } 
-      }
-    });
+  async verificarNombreLote(nombre: string, fincaId: number, excludeId?: number): Promise<boolean> {
+    const queryBuilder = this.loteRepo
+      .createQueryBuilder('lote')
+      .where('lote.nombre = :nombre', { nombre })
+      .andWhere('lote.finca_id = :fincaId', { fincaId });
+    
+    if (excludeId) {
+      queryBuilder.andWhere('lote.lote_id != :excludeId', { excludeId });
+    }
+    
+    const lote = await queryBuilder.getOne();
     return !!lote;
   }
 
@@ -165,6 +187,13 @@ export class ParametrosService {
   }
 
   async actualizarPotrero(id: number, datos: any, fincaId: number) {
+    if (datos.nombre) {
+      const existe = await this.verificarNombrePotrero(datos.nombre, fincaId, id);
+      if (existe) {
+        throw new ConflictException(`El potrero "${datos.nombre}" ya está registrado`);
+      }
+    }
+    
     await this.obtenerPotreroPorId(id, fincaId);
     return this.potreroRepo.update(id, datos);
   }
@@ -192,13 +221,17 @@ export class ParametrosService {
     return this.potreroRepo.softDelete(id);
   }
 
-  async verificarNombrePotrero(nombre: string, fincaId: number): Promise<boolean> {
-    const potrero = await this.potreroRepo.findOne({
-      where: { 
-        nombre: nombre, 
-        finca: { finca_id: fincaId } 
-      }
-    });
+  async verificarNombrePotrero(nombre: string, fincaId: number, excludeId?: number): Promise<boolean> {
+    const queryBuilder = this.potreroRepo
+      .createQueryBuilder('potrero')
+      .where('potrero.nombre = :nombre', { nombre })
+      .andWhere('potrero.finca_id = :fincaId', { fincaId });
+    
+    if (excludeId) {
+      queryBuilder.andWhere('potrero.potrero_id != :excludeId', { excludeId });
+    }
+    
+    const potrero = await queryBuilder.getOne();
     return !!potrero;
   }
 }

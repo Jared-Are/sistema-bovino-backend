@@ -27,6 +27,21 @@ export class SaludController {
     return this.saludService.findAllTipos(usuario.fincaId); 
   }
 
+  @Get('tipos-tratamiento/check-nombre')
+  @Roles(RolUsuario.PROPIETARIO, RolUsuario.VETERINARIO, RolUsuario.OPERARIO)
+  async verificarNombreTipo(
+    @Query('nombre') nombre: string,
+    @Query('excludeId') excludeId: string,
+    @UsuarioActual() usuario: any
+  ) {
+    const exists = await this.saludService.verificarNombreTipo(
+      nombre, 
+      usuario.fincaId, 
+      excludeId ? parseInt(excludeId) : undefined
+    );
+    return { exists };
+  }
+
   @Get('tipos-tratamiento/:id')
   @Roles(RolUsuario.PROPIETARIO, RolUsuario.VETERINARIO, RolUsuario.OPERARIO)
   findOneTipo(@Param('id') id: string, @UsuarioActual() usuario: any) {
