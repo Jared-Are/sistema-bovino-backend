@@ -1,5 +1,9 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, DeleteDateColumn } from 'typeorm';
 import { Finca } from '../../fincas/entities/finca.entity';
+<<<<<<< Updated upstream
+=======
+import { Animal } from '../../animales/entities/animal.entity';
+>>>>>>> Stashed changes
 
 @Entity('potrero')
 export class Potrero {
