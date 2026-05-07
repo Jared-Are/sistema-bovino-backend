@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, UseGuards, Param, Patch,Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards, Param, Patch,Delete, Query } from '@nestjs/common';
 import { ReproduccionService } from './reproduccion.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UsuarioActual } from '../../common/decorators/usuario.decorator';
@@ -23,7 +23,18 @@ export class ReproduccionController {
 
   @Get('montas')
   @Roles(RolUsuario.PROPIETARIO, RolUsuario.VETERINARIO, RolUsuario.OPERARIO)
-  obtenerMontas(@UsuarioActual() usuario: any) {
+  obtenerMontas(
+    @UsuarioActual() usuario: any,
+    @Query('animalId') animalId?: string, 
+    @Query('limit') limit?: string        
+  ) {
+    if (animalId) {
+      return this.reproduccionService.findByAnimal(
+        parseInt(animalId),
+        usuario.fincaId,
+        limit ? parseInt(limit) : undefined
+      );
+    }
     return this.reproduccionService.obtenerMontas(usuario.fincaId);
   }
 

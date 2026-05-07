@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm'; 
 import { Raza } from './entities/raza.entity';
@@ -15,6 +15,10 @@ export class ParametrosService {
 
   // --- RAZAS ---
   async crearRaza(datos: any, fincaId: number) {
+    const existe = await this.verificarNombreRaza(datos.nombre, fincaId);
+    if (existe) {
+      throw new ConflictException(`La raza "${datos.nombre}" ya está registrada`);
+    }
     return this.razaRepo.save({ ...datos, finca: { finca_id: fincaId } as any });
   }
 
@@ -33,17 +37,60 @@ export class ParametrosService {
   }
 
   async actualizarRaza(id: number, datos: { nombre?: string; descripcion?: string }, fincaId: number) {
-    await this.obtenerRazaPorId(id, fincaId); // Reutilizamos la validación de Sherly
+    if (datos.nombre) {
+      const existe = await this.verificarNombreRaza(datos.nombre, fincaId, id);
+      if (existe) {
+        throw new ConflictException(`La raza "${datos.nombre}" ya está registrada`);
+      }
+    }
+    
+    await this.obtenerRazaPorId(id, fincaId);
     return this.razaRepo.update(id, datos);
   }
 
+  async verificarRazaEnUso(id: number, fincaId: number): Promise<boolean> {
+  await this.obtenerRazaPorId(id, fincaId);
+  
+  const animalesConRaza = await this.razaRepo
+    .createQueryBuilder('raza')
+    .leftJoin('raza.animales', 'animal')
+    .where('raza.raza_id = :id', { id })
+    .andWhere('animal.fecha_eliminacion IS NULL')
+    .andWhere('animal.finca_id = :fincaId', { fincaId })
+    .getCount();
+  
+  return animalesConRaza > 0;
+}
+
   async eliminarRaza(id: number, fincaId: number) {
-    await this.obtenerRazaPorId(id, fincaId);
-    return this.razaRepo.softDelete(id); // Tu borrado seguro
+    const enUso = await this.verificarRazaEnUso(id, fincaId);
+    if (enUso) {
+      throw new ConflictException('No se puede eliminar la raza porque hay animales asociados a ella');
+    }
+    
+    return this.razaRepo.softDelete(id);
+  }
+
+  async verificarNombreRaza(nombre: string, fincaId: number, excludeId?: number): Promise<boolean> {
+    const queryBuilder = this.razaRepo
+      .createQueryBuilder('raza')
+      .where('raza.nombre = :nombre', { nombre })
+      .andWhere('raza.finca_id = :fincaId', { fincaId });
+    
+    if (excludeId) {
+      queryBuilder.andWhere('raza.raza_id != :excludeId', { excludeId });
+    }
+    
+    const raza = await queryBuilder.getOne();
+    return !!raza;
   }
 
   // --- LOTES ---
   async crearLote(datos: any, fincaId: number) {
+    const existe = await this.verificarNombreLote(datos.nombre, fincaId);
+    if (existe) {
+      throw new ConflictException(`El lote "${datos.nombre}" ya está registrado`);
+    }
     return this.loteRepo.save({ 
         ...datos, 
         finca: { finca_id: fincaId } as any 
@@ -65,17 +112,60 @@ export class ParametrosService {
   }
 
   async actualizarLote(id: number, datos: any, fincaId: number) {
+    if (datos.nombre) {
+      const existe = await this.verificarNombreLote(datos.nombre, fincaId, id);
+      if (existe) {
+        throw new ConflictException(`El lote "${datos.nombre}" ya está registrado`);
+      }
+    }
+    
     await this.obtenerLotePorId(id, fincaId);
     return this.loteRepo.update(id, datos);
   }
 
+  async verificarLoteEnUso(id: number, fincaId: number): Promise<boolean> {
+  await this.obtenerLotePorId(id, fincaId);
+  
+  const animalesConLote = await this.loteRepo
+    .createQueryBuilder('lote')
+    .leftJoin('lote.animales', 'animal')
+    .where('lote.lote_id = :id', { id })
+    .andWhere('animal.fecha_eliminacion IS NULL')
+    .andWhere('animal.finca_id = :fincaId', { fincaId })
+    .getCount();
+  
+  return animalesConLote > 0;
+}
+
   async eliminarLote(id: number, fincaId: number) {
-    await this.obtenerLotePorId(id, fincaId);
+    const enUso = await this.verificarLoteEnUso(id, fincaId);
+    if (enUso) {
+      throw new ConflictException('No se puede eliminar el lote porque hay animales asociados a él');
+    }
+    
     return this.loteRepo.softDelete(id);
+  }
+
+  async verificarNombreLote(nombre: string, fincaId: number, excludeId?: number): Promise<boolean> {
+    const queryBuilder = this.loteRepo
+      .createQueryBuilder('lote')
+      .where('lote.nombre = :nombre', { nombre })
+      .andWhere('lote.finca_id = :fincaId', { fincaId });
+    
+    if (excludeId) {
+      queryBuilder.andWhere('lote.lote_id != :excludeId', { excludeId });
+    }
+    
+    const lote = await queryBuilder.getOne();
+    return !!lote;
   }
 
   // --- POTREROS ---
   async crearPotrero(datos: any, fincaId: number) {
+    const existe = await this.verificarNombrePotrero(datos.nombre, fincaId);
+    if (existe) {
+      throw new ConflictException(`El potrero "${datos.nombre}" ya está registrado`);
+    }
     return this.potreroRepo.save({ 
         ...datos, 
         finca: { finca_id: fincaId } as any 
@@ -97,12 +187,51 @@ export class ParametrosService {
   }
 
   async actualizarPotrero(id: number, datos: any, fincaId: number) {
+    if (datos.nombre) {
+      const existe = await this.verificarNombrePotrero(datos.nombre, fincaId, id);
+      if (existe) {
+        throw new ConflictException(`El potrero "${datos.nombre}" ya está registrado`);
+      }
+    }
+    
     await this.obtenerPotreroPorId(id, fincaId);
     return this.potreroRepo.update(id, datos);
   }
 
+  async verificarPotreroEnUso(id: number, fincaId: number): Promise<boolean> {
+  await this.obtenerPotreroPorId(id, fincaId);
+  
+  const animalesConPotrero = await this.potreroRepo
+    .createQueryBuilder('potrero')
+    .leftJoin('potrero.animales', 'animal')
+    .where('potrero.potrero_id = :id', { id })
+    .andWhere('animal.fecha_eliminacion IS NULL')
+    .andWhere('animal.finca_id = :fincaId', { fincaId })
+    .getCount();
+  
+  return animalesConPotrero > 0;
+}
+
   async eliminarPotrero(id: number, fincaId: number) {
-    await this.obtenerPotreroPorId(id, fincaId);
+    const enUso = await this.verificarPotreroEnUso(id, fincaId);
+    if (enUso) {
+      throw new ConflictException('No se puede eliminar el potrero porque hay animales asociados a él');
+    }
+    
     return this.potreroRepo.softDelete(id);
+  }
+
+  async verificarNombrePotrero(nombre: string, fincaId: number, excludeId?: number): Promise<boolean> {
+    const queryBuilder = this.potreroRepo
+      .createQueryBuilder('potrero')
+      .where('potrero.nombre = :nombre', { nombre })
+      .andWhere('potrero.finca_id = :fincaId', { fincaId });
+    
+    if (excludeId) {
+      queryBuilder.andWhere('potrero.potrero_id != :excludeId', { excludeId });
+    }
+    
+    const potrero = await queryBuilder.getOne();
+    return !!potrero;
   }
 }
