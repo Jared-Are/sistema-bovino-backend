@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, HttpCode, HttpStatus, Query } from '@nestjs/common';
 import { AnimalesService } from './animales.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UsuarioActual } from '../../common/decorators/usuario.decorator';
@@ -42,5 +42,11 @@ export class AnimalesController {
   @Roles(RolUsuario.PROPIETARIO)
   remove(@Param('id') id: string, @UsuarioActual() usuario: any) {
     return this.animalesService.remove(+id, usuario.fincaId);
+  }
+  @Get('check-arete')
+  @Roles(RolUsuario.PROPIETARIO, RolUsuario.VETERINARIO, RolUsuario.OPERARIO)
+  async checkArete(@Query('arete') arete: string, @UsuarioActual() usuario: any) {
+    const exists = await this.animalesService.checkArete(arete, usuario.fincaId);
+    return { exists };
   }
 }

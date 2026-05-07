@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
 import { ParametrosService } from './parametros.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UsuarioActual } from '../../common/decorators/usuario.decorator';
@@ -26,6 +26,21 @@ export class ParametrosController {
   @Roles(RolUsuario.PROPIETARIO, RolUsuario.VETERINARIO, RolUsuario.OPERARIO)
   obtenerRazas(@UsuarioActual() usuario: any) {
     return this.parametrosService.obtenerRazas(usuario.fincaId);
+  }
+
+  @Get('razas/check-nombre')
+  @Roles(RolUsuario.PROPIETARIO, RolUsuario.VETERINARIO, RolUsuario.OPERARIO)
+  async verificarNombreRaza(
+    @Query('nombre') nombre: string,
+    @Query('excludeId') excludeId: string,
+    @UsuarioActual() usuario: any
+  ) {
+    const exists = await this.parametrosService.verificarNombreRaza(
+      nombre, 
+      usuario.fincaId, 
+      excludeId ? parseInt(excludeId) : undefined
+    );
+    return { exists };
   }
 
   @Get('razas/:id')
@@ -59,6 +74,21 @@ export class ParametrosController {
     return this.parametrosService.obtenerLotes(usuario.fincaId);
   }
 
+  @Get('lotes/check-nombre')
+  @Roles(RolUsuario.PROPIETARIO, RolUsuario.VETERINARIO, RolUsuario.OPERARIO)
+  async verificarNombreLote(
+    @Query('nombre') nombre: string,
+    @Query('excludeId') excludeId: string,
+    @UsuarioActual() usuario: any
+  ) {
+    const exists = await this.parametrosService.verificarNombreLote(
+      nombre, 
+      usuario.fincaId, 
+      excludeId ? parseInt(excludeId) : undefined
+    );
+    return { exists };
+  }
+
   @Get('lotes/:id')
   @Roles(RolUsuario.PROPIETARIO, RolUsuario.VETERINARIO, RolUsuario.OPERARIO)
   obtenerLotePorId(@Param('id') id: string, @UsuarioActual() usuario: any) {
@@ -88,6 +118,21 @@ export class ParametrosController {
   @Roles(RolUsuario.PROPIETARIO, RolUsuario.VETERINARIO, RolUsuario.OPERARIO)
   obtenerPotreros(@UsuarioActual() usuario: any) {
     return this.parametrosService.obtenerPotreros(usuario.fincaId);
+  }
+
+  @Get('potreros/check-nombre')
+  @Roles(RolUsuario.PROPIETARIO, RolUsuario.VETERINARIO, RolUsuario.OPERARIO)
+  async verificarNombrePotrero(
+    @Query('nombre') nombre: string,
+    @Query('excludeId') excludeId: string,
+    @UsuarioActual() usuario: any
+  ) {
+    const exists = await this.parametrosService.verificarNombrePotrero(
+      nombre, 
+      usuario.fincaId, 
+      excludeId ? parseInt(excludeId) : undefined
+    );
+    return { exists };
   }
 
   @Get('potreros/:id')

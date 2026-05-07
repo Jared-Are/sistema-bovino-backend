@@ -1,5 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, DeleteDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, DeleteDateColumn, OneToMany } from 'typeorm';
 import { Finca } from '../../fincas/entities/finca.entity';
+import { Animal } from 'src/modules/animales/entities/animal.entity';
 
 @Entity('potrero')
 export class Potrero {
@@ -16,6 +17,9 @@ export class Potrero {
   @JoinColumn({ name: 'finca_id' })
   finca: Finca;
 
-@DeleteDateColumn({ type: 'timestamptz', nullable: true })
+  @DeleteDateColumn({ type: 'timestamptz', nullable: true })
   fecha_eliminacion: Date;
+  
+  @OneToMany(() => Animal, animal => animal.potrero)
+  animales: Animal[];
 }

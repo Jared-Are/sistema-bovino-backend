@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
 import { SaludService } from './salud.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UsuarioActual } from '../../common/decorators/usuario.decorator';
@@ -25,6 +25,21 @@ export class SaludController {
   @Roles(RolUsuario.PROPIETARIO, RolUsuario.VETERINARIO, RolUsuario.OPERARIO)
   findAllTipos(@UsuarioActual() usuario: any) {
     return this.saludService.findAllTipos(usuario.fincaId); 
+  }
+
+  @Get('tipos-tratamiento/check-nombre')
+  @Roles(RolUsuario.PROPIETARIO, RolUsuario.VETERINARIO, RolUsuario.OPERARIO)
+  async verificarNombreTipo(
+    @Query('nombre') nombre: string,
+    @Query('excludeId') excludeId: string,
+    @UsuarioActual() usuario: any
+  ) {
+    const exists = await this.saludService.verificarNombreTipo(
+      nombre, 
+      usuario.fincaId, 
+      excludeId ? parseInt(excludeId) : undefined
+    );
+    return { exists };
   }
 
   @Get('tipos-tratamiento/:id')
@@ -54,7 +69,18 @@ export class SaludController {
 
   @Get('tratamientos')
   @Roles(RolUsuario.PROPIETARIO, RolUsuario.VETERINARIO, RolUsuario.OPERARIO)
-  findAllTratamientos(@UsuarioActual() usuario: any) {
+  findAllTratamientos(
+    @UsuarioActual() usuario: any,
+    @Query('animalId') animalId?: string,  
+    @Query('limit') limit?: string          
+  ) {
+    if (animalId) {
+      return this.saludService.findByAnimal(
+        parseInt(animalId),
+        usuario.fincaId,
+        limit ? parseInt(limit) : undefined
+      );
+    }
     return this.saludService.findAllTratamientos(usuario.fincaId);
   }
 
