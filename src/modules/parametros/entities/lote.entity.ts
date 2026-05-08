@@ -1,13 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, DeleteDateColumn, OneToMany } from 'typeorm';
 import { Finca } from '../../fincas/entities/finca.entity';
-<<<<<<< HEAD
-<<<<<<< Updated upstream
-=======
 import { Animal } from '../../animales/entities/animal.entity';
->>>>>>> Stashed changes
-=======
-import { Animal } from 'src/modules/animales/entities/animal.entity';
->>>>>>> main
 
 @Entity('lote')
 export class Lote {
