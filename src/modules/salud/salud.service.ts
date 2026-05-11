@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, IsNull, Not } from 'typeorm';
+import { Repository, IsNull} from 'typeorm';
 import { Tratamiento } from './entities/tratamiento.entity';
 import { TipoTratamiento } from './entities/tipo-tratamiento.entity';
 import { CreateTratamientoDto } from './dto/create-tratamiento.dto';
