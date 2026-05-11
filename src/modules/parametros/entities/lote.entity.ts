@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, DeleteDateColumn, OneToMany } from 'typeorm';
 import { Finca } from '../../fincas/entities/finca.entity';
-import { Animal } from 'src/modules/animales/entities/animal.entity';
+import { Animal } from '../../animales/entities/animal.entity';
 
 @Entity('lote')
 export class Lote {
