@@ -9,10 +9,10 @@ export class EmailService {
     this.transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
-      user: process.env.SMTP_USER || '',
+        user: process.env.SMTP_USER || '',
         pass: process.env.SMTP_PASS || '',
       },
-    }as any);
+    } as any);
   }
 
   async enviarCredenciales(
@@ -66,9 +66,9 @@ export class EmailService {
 
     try {
       await this.transporter.sendMail(mailOptions);
-      
+
     } catch (error) {
-      console.error('Error al enviar el correo a ${email}:', error);
+      console.error(`Error al enviar el correo a ${email}:`, error);
       throw new Error('El usuario se creó, pero hubo un error al enviar el correo.');
     }
   }
