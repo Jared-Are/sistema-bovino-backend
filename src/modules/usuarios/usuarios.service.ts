@@ -163,21 +163,29 @@ export class UsuariosService {
       .getRepository('finca')
       .findOne({ where: { finca_id: fincaId } });
 
-    // Enviar credenciales por email (si tiene email)
-    if (datos.email) {
-      await this.emailService.enviarCredenciales(
-        datos.email,
-        datos.nombre,
-        datos.telefono,
-        contrasenaPlana,
-        datos.rol,
-        finca?.nombre || 'Tu finca',
-      );
-    }
-
     // No devolver la contraseña en la respuesta
     const { contrasena, ...resultado } = usuarioGuardado;
-    return resultado as Usuario;
+
+    // Enviar credenciales por email (si tiene email)
+    // ⚠️ El email NO debe abortar la creación: si falla, se loguea y se avisa en la respuesta
+    let emailEnviado = false;
+    if (datos.email) {
+      try {
+        await this.emailService.enviarCredenciales(
+          datos.email,
+          datos.nombre,
+          datos.telefono,
+          contrasenaPlana,
+          datos.rol,
+          finca?.nombre || 'Tu finca',
+        );
+        emailEnviado = true;
+      } catch (emailError) {
+        console.warn(`[UsuariosService] No se pudo enviar email a ${datos.email}:`, emailError);
+      }
+    }
+
+    return { ...resultado, emailEnviado } as any;
   }
 
   async obtenerUsuariosDeFinca(fincaId: number) {
@@ -275,11 +283,12 @@ export class UsuariosService {
   }
 
   async eliminarUsuario(usuarioId: string, fincaId: number) {
-    // Verificar que no sea el único propietario
+    // Verificar que el usuario existe y pertenece a la finca (excluye ya eliminados)
     const usuario = await this.usuarioRepository.findOne({
       where: { 
         usuario_id: usuarioId,
-        finca: { finca_id: fincaId }
+        finca: { finca_id: fincaId },
+        fecha_eliminacion: IsNull()
       }
     });
 
@@ -287,30 +296,23 @@ export class UsuariosService {
       throw new NotFoundException('Usuario no encontrado');
     }
 
-    // Si es propietario, verificar que no sea el único
+    // Si es propietario, verificar que no sea el único activo
     if (usuario.rol === RolUsuario.PROPIETARIO) {
       const propietarios = await this.usuarioRepository.count({
         where: { 
           finca: { finca_id: fincaId }, 
-          rol: RolUsuario.PROPIETARIO 
+          rol: RolUsuario.PROPIETARIO,
+          fecha_eliminacion: IsNull()  // solo cuenta propietarios no eliminados
         }
       });
 
       if (propietarios <= 1) {
         throw new BadRequestException('No se puede eliminar el único propietario de la finca');
       }
-      await this.usuarioRepository.softDelete(usuarioId);
-
     }
 
-    const resultado = await this.usuarioRepository.delete({
-      usuario_id: usuarioId,
-      finca: { finca_id: fincaId }
-    });
-
-    if (resultado.affected === 0) {
-      throw new NotFoundException('Usuario no encontrado');
-    }
+    // Usar siempre softDelete para respetar la columna fecha_eliminacion
+    await this.usuarioRepository.softDelete(usuarioId);
 
     return { message: 'Usuario eliminado correctamente' };
   }
