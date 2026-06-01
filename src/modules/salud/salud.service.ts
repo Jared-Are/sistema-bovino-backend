@@ -20,17 +20,23 @@ export class SaludService {
     private animalRepo: Repository<Animal>,
   ) {}
 
-  private async generarNumeroTratamiento(): Promise<string> {
-    const ultimoTratamiento = await this.tratamientoRepo.findOne({
-      where: { numero_tratamiento: IsNull() },
-      order: { id: 'DESC' },
-    });
+  async generarNumeroTratamiento(fincaId: number): Promise<string> {
+    const result = await this.tratamientoRepo
+      .createQueryBuilder('t')
+      .select('MAX(CAST(SUBSTRING(t.numero_tratamiento, 6) AS INTEGER))', 'max_num')
+      .innerJoin('t.animal', 'a')
+      .innerJoin('a.finca', 'f')
+      .where('t.numero_tratamiento IS NOT NULL')
+      .andWhere('f.finca_id = :fincaId', { fincaId })
+      .withDeleted() 
+      .getRawOne();
 
     let nuevoNumero = 1;
-    if (ultimoTratamiento?.numero_tratamiento) {
-      const ultimoNumero = parseInt(ultimoTratamiento.numero_tratamiento.split('-')[1]);
-      nuevoNumero = ultimoNumero + 1;
+    
+    if (result && result.max_num) {
+      nuevoNumero = parseInt(result.max_num, 10) + 1;
     }
+    
     return `TRAT-${nuevoNumero.toString().padStart(4, '0')}`;
   }
 
@@ -105,26 +111,37 @@ export class SaludService {
     });
     if (!animal) throw new BadRequestException('Animal no válido');
 
+    const numeroTratamiento = await this.generarNumeroTratamiento(fincaId);
+
     const tratamiento = this.tratamientoRepo.create({
       ...dto,
-      numero_tratamiento: await this.generarNumeroTratamiento(),
+      numero_tratamiento: numeroTratamiento,
     });
 
     return this.tratamientoRepo.save(tratamiento);
   }
 
   async findAllTratamientos(fincaId: number) {
-    return this.tratamientoRepo.find({
-      where: { fecha_eliminacion: IsNull() },
-      relations: ['animal', 'tipo_tratamiento'],
-    });
+    return this.tratamientoRepo
+      .createQueryBuilder('t')
+      .innerJoinAndSelect('t.animal', 'a')
+      .innerJoinAndSelect('t.tipo_tratamiento', 'tt')
+      .where('t.fecha_eliminacion IS NULL')
+      .andWhere('a.finca_id = :fincaId', { fincaId })
+      .orderBy('t.fecha_creacion', 'DESC')
+      .getMany();
   }
 
   async findOneTratamiento(id: number, fincaId: number) {
-    const tratamiento = await this.tratamientoRepo.findOne({
-      where: { id, fecha_eliminacion: IsNull() },
-      relations: ['animal', 'tipo_tratamiento'],
-    });
+    const tratamiento = await this.tratamientoRepo
+      .createQueryBuilder('t')
+      .innerJoinAndSelect('t.animal', 'a')
+      .innerJoinAndSelect('t.tipo_tratamiento', 'tt')
+      .where('t.id = :id', { id })
+      .andWhere('t.fecha_eliminacion IS NULL')
+      .andWhere('a.finca_id = :fincaId', { fincaId })
+      .getOne();
+      
     if (!tratamiento) throw new NotFoundException('Tratamiento no encontrado');
     return tratamiento;
   }
@@ -147,11 +164,19 @@ export class SaludService {
   }
 
   async findByAnimal(animalId: number, fincaId: number, limit?: number) {
-    const query = this.tratamientoRepo.find({
-      where: { animal_id: animalId, fecha_eliminacion: IsNull() },
-      relations: ['animal', 'tipo_tratamiento'],
-      order: { fecha: 'DESC' },
-    });
-    return query;
+    const query = this.tratamientoRepo
+      .createQueryBuilder('t')
+      .innerJoinAndSelect('t.animal', 'a')
+      .innerJoinAndSelect('t.tipo_tratamiento', 'tt')
+      .where('t.animal_id = :animalId', { animalId })
+      .andWhere('t.fecha_eliminacion IS NULL')
+      .andWhere('a.finca_id = :fincaId', { fincaId })
+      .orderBy('t.fecha', 'DESC');
+    
+    if (limit) {
+      query.limit(limit);
+    }
+    
+    return query.getMany();
   }
 }

@@ -1,5 +1,5 @@
 
-import { IsString, IsNotEmpty, IsEnum, IsOptional, IsUUID, MinLength } from 'class-validator';
+import { IsString, IsNotEmpty, IsEnum, IsOptional } from 'class-validator';
 import { RolUsuario, EstadoUsuario } from '../../../common/enums';
 
 export class ActualizarUsuarioDto {
@@ -26,7 +26,4 @@ export class ActualizarUsuarioDto {
   @IsEnum(EstadoUsuario)
   estado?: EstadoUsuario;
 
-  @IsOptional()
-  finca_id?: number;
-  contrasena: string; 
 }

@@ -8,13 +8,13 @@ export class Tratamiento {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ name: 'numero_tratamiento', type: 'varchar', nullable: true })
-  numero_tratamiento: string | null;  // 👈 Agregar | null
+  @Column({ name: 'numero_tratamiento', type: 'varchar', nullable: true, unique: false })
+  numero_tratamiento: string;
 
   @Column({ name: 'tipo_tratamiento_id' })
   tipo_tratamiento_id: number;
 
-  @Column({ type: 'enum', enum: EstadoTratamiento, default: EstadoTratamiento.ACTIVO })
+  @Column({ type: 'enum', enum: EstadoTratamiento, default: EstadoTratamiento.PENDIENTE })
   estado: EstadoTratamiento;
 
   @Column({ type: 'date' })

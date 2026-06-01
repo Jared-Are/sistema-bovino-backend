@@ -9,7 +9,7 @@ export class Usuario {
   @Column({ length: 150 })
   nombre: string;
 
-  @Column({ unique: true, nullable: true })
+  @Column( {nullable: true })
   email: string;
 
   @Column({ length: 20 })
