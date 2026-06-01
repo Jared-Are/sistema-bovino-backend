@@ -185,7 +185,7 @@ export class UsuariosService {
       }
     }
 
-    return { ...resultado, emailEnviado } as any;
+    return { ...resultado, emailEnviado, contrasenaTemporal: contrasenaPlana } as any;
   }
 
   async obtenerUsuariosDeFinca(fincaId: number) {
