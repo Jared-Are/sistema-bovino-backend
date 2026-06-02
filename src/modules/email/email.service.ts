@@ -66,6 +66,7 @@ export class EmailService {
 
     try {
       await this.transporter.sendMail(mailOptions);
+
     } catch (error) {
       console.error(`Error al enviar el correo a ${email}:`, error);
       throw new Error('El usuario se creó, pero hubo un error al enviar el correo.');

@@ -165,8 +165,11 @@ export class UsuariosService {
       .getRepository('finca')
       .findOne({ where: { finca_id: fincaId } });
 
+    // No devolver la contraseña en la respuesta
     const { contrasena, ...resultado } = usuarioGuardado;
 
+    // Enviar credenciales por email (si tiene email)
+    // ⚠️ El email NO debe abortar la creación: si falla, se loguea y se avisa en la respuesta
     let emailEnviado = false;
     if (datos.email) {
       try {
@@ -184,7 +187,7 @@ export class UsuariosService {
       }
     }
 
-    return { ...resultado, emailEnviado };
+    return { ...resultado, emailEnviado, contrasenaTemporal: contrasenaPlana } as any;
   }
 
   async obtenerUsuariosDeFinca(fincaId: number) {
@@ -338,7 +341,9 @@ export class UsuariosService {
       }
     }
 
-    await this.usuarioRepository.softDelete(usuarioId);
+    // Usar siempre softDelete para respetar la columna fecha_eliminacion
+    await this.usuarioRepository.softDelete(usuarioId); 
+    
     return { message: 'Usuario eliminado correctamente' };
   }
 
