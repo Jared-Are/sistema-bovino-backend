@@ -13,9 +13,17 @@ export class AnimalesService {
   ) {}
 
   async create(createAnimalDto: CreateAnimalDto, fincaId: number) {
+    //validacion max de años
+    const fechaNacimiento = new Date(createAnimalDto.fecha_nacimiento);
+    const limiteEdad = new Date();
+    limiteEdad.setFullYear(limiteEdad.getFullYear() - 25);
+    if(fechaNacimiento < limiteEdad) {
+      throw new BadRequestException('La edad del animal no puede ser mayor a 25 años');
+    }
+    
     if (createAnimalDto.fecha_destete && new Date(createAnimalDto.fecha_destete) < new Date(createAnimalDto.fecha_nacimiento)) {
     throw new BadRequestException('La fecha de destete no puede ser anterior a la fecha de nacimiento');
-  }
+    }
 
   const existeArete = await this.animalesRepository.findOne({
     where: {
