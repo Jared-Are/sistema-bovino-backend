@@ -70,6 +70,7 @@ export class UsuariosService {
   async cambiarContrasena(usuarioId: string, nuevaContrasena: string) {
     const usuario = await this.usuarioRepository
       .createQueryBuilder('usuario')
+      .leftJoinAndSelect('usuario.finca', 'finca')
       .where('usuario.usuario_id = :usuarioId', { usuarioId })
       .getOne();
 
@@ -98,6 +99,18 @@ export class UsuariosService {
         debe_cambiar_contrasena: false
       }
     );
+
+    if (usuario.email) {
+      try {
+        await this.emailService.notificarCambioContrasena(
+          usuario.email,
+          usuario.nombre,
+          usuario.finca?.nombre || 'Tu finca'
+        );
+      } catch (emailError) {
+        console.warn(`[UsuariosService] No se pudo enviar notificación de cambio de contraseña a ${usuario.email}:`, emailError);
+      }
+    }
     
     return { 
       mensaje: 'Contraseña actualizada correctamente',

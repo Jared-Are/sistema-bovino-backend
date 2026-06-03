@@ -125,4 +125,45 @@ export class EmailService {
       console.error(`Error al enviar el correo de notificación a ${emailNuevo}:`, error);
     }
   }
+
+  async notificarCambioContrasena(
+    email: string,
+    nombre: string,
+    fincaNombre: string,
+  ) {
+    const mailOptions = {
+      from: `Sistema Bovino <${process.env.SMTP_USER}>`,
+      to: email,
+      subject: 'Tu contraseña ha sido actualizada - Sistema Bovino',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background-color: #ef4444; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="color: white; margin: 0;">Sistema Bovino</h1>
+          </div>
+          
+          <div style="background-color: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px;">
+            <h2 style="color: #111827;">¡Hola, ${nombre}!</h2>
+            <p style="color: #4b5563;">Te informamos que la contraseña de tu cuenta para la finca <strong>${fincaNombre}</strong> ha sido actualizada exitosamente.</p>
+            
+            <div style="background-color: #fee2e2; border-left: 4px solid #ef4444; padding: 15px; border-radius: 4px; margin: 20px 0;">
+              <p style="color: #991b1b; margin: 0; font-weight: bold;">¿No fuiste tú?</p>
+              <p style="color: #7f1d1d; margin: 5px 0 0 0; font-size: 14px;">
+                Si tú no realizaste este cambio, por favor ponte en contacto de inmediato con el administrador de tu finca.
+              </p>
+            </div>
+            
+            <p style="color: #9ca3af; font-size: 12px; text-align: center; margin-top: 30px;">
+              © ${new Date().getFullYear()} Sistema Bovino. Todos los derechos reservados.
+            </p>
+          </div>
+        </div>
+      `,
+    };
+
+    try {
+      await this.transporter.sendMail(mailOptions);
+    } catch (error) {
+      console.error(`Error al enviar el correo de cambio de contraseña a ${email}:`, error);
+    }
+  }
 }
