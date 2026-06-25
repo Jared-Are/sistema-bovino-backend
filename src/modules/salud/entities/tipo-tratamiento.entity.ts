@@ -6,7 +6,7 @@ export class TipoTratamiento {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ length: 100, unique: true })
+  @Column({ length: 100})
   nombre: string;
 
   @Column({ name: 'finca_id' })
